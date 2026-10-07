@@ -1,0 +1,107 @@
+1. create a prompt to generate all sector with sub sector list in json with following format
+
+	{
+
+      "sector": "Tobacco & Related Products",
+
+      "sub_sectors": [
+
+        "Cigarettes",
+
+        "Cigars",
+
+        "Tobacco",
+
+        "Bidi",
+
+        "Pan Masala",
+
+        "Chewing Tobacco",
+
+        "Mouth Fresheners",
+
+        "Tobacco Retail Accessories"
+
+      ]
+
+    }
+
+2. create sample sales data for tobacco item's with the follwing details with table format and json format as well
+
+	CustomerName	
+
+	Country	
+
+	Location	
+
+	Month	
+
+	Year	
+
+	Product	
+
+	Unit Of Measurement	
+
+	Quantity	
+
+	Amount	
+
+	Currency
+
+3. Create a sample data for dealer list with follwoing details  
+
+	{
+
+      "dealer_name": "KAVERI ELECTRICALS",
+
+      "region": "Agra",
+
+	  "registration_no": "WB-09324",
+
+      "full_address": "6/236 BEHRON NALA, OPP. MEGHDOOT FUR BELANGANJ, Agra -282004, India",
+
+      "email": "kaverielectricals96@yahoo.com",
+
+      "phone": "+91 98371 41116",
+
+      "country": "India",
+
+      "sector": "Tobacco & Related Products",
+
+      "product": [
+
+        "Breakers & Switches",
+
+        "Control Products",
+
+        "Enclosures & Din Rail Products",
+
+        "Ring main unit (RMU)",
+
+        "Breakers",
+
+        "Switches",
+
+        "Enclosures",
+
+        "Din Rail Products",
+
+        "Ring Main Unit"
+
+      ],
+
+      "last_transaction_date": "Not Available",
+
+      "last_transaction_amount": "Not Available",
+
+      "currency": "Not Available",
+
+      "source_url": "https://new.abb.com/indian-subcontinent/about/contactcenter/el-india---channel-partners",
+
+      "verification_date": "2026-10-06"
+
+    }
+
+EL India - Channel partners
+EL India - Chanel partners
+ 

@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dealer Portal ERD</title>
+<style>
+  :root { --bg: #f4f6fa; --card: #ffffff; --text: #0f1e3c; --muted: #52607a; --border: #e3e8ef; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 1600px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  p { color: var(--muted); margin: 0 0 16px; }
+  section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-top: 16px; overflow-x: auto; }
+  h2 { font-size: 1.1rem; margin: 0 0 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Dealer Communication Portal — ERD</h1>
+  <p>27 tables in schema <code>dcp</code>. Every table also has the common columns
+     id, is_active, created_by, created_on, modified_by, modified_on.</p>
+  <section><h2>1. Relationships overview</h2><pre class="mermaid">erDiagram
+    communications ||--o{ communication_attachments : &quot;communication_id&quot;
+    communication_statuses ||--o{ communications : &quot;communication_status_id&quot;
+    communication_types ||--o{ communications : &quot;communication_type_id&quot;
+    companies ||--o{ communications : &quot;company_id&quot;
+    dealers ||--o{ communications : &quot;dealer_id&quot;
+    users |o--o{ communications : &quot;sender_user_id&quot;
+    countries |o--o{ companies : &quot;country_id&quot;
+    regions |o--o{ companies : &quot;region_id&quot;
+    sectors |o--o{ companies : &quot;sector_id&quot;
+    dealers ||--o{ dealer_products : &quot;dealer_id&quot;
+    products ||--o{ dealer_products : &quot;product_id&quot;
+    companies ||--o{ dealers : &quot;company_id&quot;
+    countries ||--o{ dealers : &quot;country_id&quot;
+    dealer_statuses ||--o{ dealers : &quot;dealer_status_id&quot;
+    dealer_types ||--o{ dealers : &quot;dealer_type_id&quot;
+    currencies |o--o{ dealers : &quot;last_transaction_currency_id&quot;
+    regions |o--o{ dealers : &quot;region_id&quot;
+    sectors |o--o{ dealers : &quot;sector_id&quot;
+    companies |o--o{ exchange_rates : &quot;company_id&quot;
+    currencies ||--o{ exchange_rates : &quot;currency_id&quot;
+    users ||--o{ password_reset_tokens : &quot;user_id&quot;
+    products ||--o{ product_sub_sectors : &quot;product_id&quot;
+    sub_sectors ||--o{ product_sub_sectors : &quot;sub_sector_id&quot;
+    companies ||--o{ sales_records : &quot;company_id&quot;
+    countries |o--o{ sales_records : &quot;country_id&quot;
+    currencies |o--o{ sales_records : &quot;currency_id&quot;
+    dealers |o--o{ sales_records : &quot;dealer_id&quot;
+    products |o--o{ sales_records : &quot;product_id&quot;
+    sales_uploads ||--o{ sales_records : &quot;sales_upload_id&quot;
+    sales_uploads ||--o{ sales_upload_columns : &quot;sales_upload_id&quot;
+    sales_uploads ||--o{ sales_upload_issues : &quot;sales_upload_id&quot;
+    sales_records |o--o{ sales_upload_rows : &quot;sales_record_id&quot;
+    sales_uploads ||--o{ sales_upload_rows : &quot;sales_upload_id&quot;
+    companies ||--o{ sales_uploads : &quot;company_id&quot;
+    users ||--o{ sales_uploads : &quot;uploaded_by_user_id&quot;
+    sectors ||--o{ sub_sectors : &quot;sector_id&quot;
+    users ||--o{ user_sessions : &quot;user_id&quot;
+    users ||--o| user_settings : &quot;user_id&quot;
+    companies ||--o{ users : &quot;company_id&quot;
+    countries |o--o{ users : &quot;country_id&quot;
+    regions |o--o{ users : &quot;region_id&quot;
+    roles ||--o{ users : &quot;role_id&quot;</pre></section>
+  <section><h2>2. Full diagram (all columns)</h2><pre class="mermaid">erDiagram
+    roles {
+        bigint id PK
+        varchar_100 name UK
+        varchar_500 description
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    countries {
+        bigint id PK
+        varchar_100 name UK
+        char_2 iso2_code UK
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    regions {
+        bigint id PK
+        varchar_50 name UK
+        smallint sort_order
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    currencies {
+        bigint id PK
+        char_3 code UK
+        varchar_100 name
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    dealer_types {
+        bigint id PK
+        varchar_50 name UK
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    dealer_statuses {
+        bigint id PK
+        varchar_50 name UK
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    communication_types {
+        bigint id PK
+        varchar_50 name UK
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    communication_statuses {
+        bigint id PK
+        varchar_50 name UK
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    sectors {
+        bigint id PK
+        varchar_150 name UK
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    sub_sectors {
+        bigint id PK
+        bigint sector_id FK
+        varchar_150 name
+        smallint sort_order
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    companies {
+        bigint id PK
+        varchar_30 company_code UK
+        varchar_200 name
+        varchar_10 logo_text
+        varchar_500 logo_url
+        varchar_150 industry
+        bigint sector_id FK
+        varchar_300 website
+        varchar_254 email
+        varchar_50 phone
+        varchar_300 address_line1
+        varchar_100 city
+        varchar_100 state
+        varchar_20 postal_code
+        bigint country_id FK
+        bigint region_id FK
+        varchar_100 registration_number
+        varchar_100 tax_id
+        int employee_count
+        smallint founded_year
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    users {
+        bigint id PK
+        bigint company_id FK
+        bigint role_id FK
+        varchar_30 user_code UK
+        varchar_150 full_name
+        varchar_254 email
+        varchar_255 password_hash
+        varchar_100 job_title
+        varchar_50 phone
+        bigint country_id FK
+        bigint region_id FK
+        timestamptz last_login_on
+        int failed_login_count
+        timestamptz locked_until
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    user_settings {
+        bigint id PK
+        bigint user_id FK, UK
+        smallint default_page_size
+        boolean apply_filters_instantly
+        varchar_10 desktop_dealer_view
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    user_sessions {
+        bigint id PK
+        bigint user_id FK
+        varchar_128 refresh_token_hash UK
+        boolean remember_me
+        timestamptz expires_on
+        timestamptz revoked_on
+        varchar_500 user_agent
+        inet ip_address
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    password_reset_tokens {
+        bigint id PK
+        bigint user_id FK
+        varchar_128 token_hash UK
+        timestamptz expires_on
+        timestamptz used_on
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    dealers {
+        bigint id PK
+        bigint company_id FK
+        varchar_30 dealer_code
+        varchar_200 dealer_name
+        varchar_250 legal_name
+        bigint dealer_type_id FK
+        bigint dealer_status_id FK
+        varchar_150 contact_person
+        varchar_254 email
+        varchar_50 phone
+        varchar_300 website
+        varchar_100 registration_no
+        varchar_500 full_address
+        varchar_100 city
+        varchar_100 state
+        varchar_20 postal_code
+        bigint country_id FK
+        bigint region_id FK
+        bigint sector_id FK
+        date last_transaction_date
+        numeric_18_2 last_transaction_amount
+        bigint last_transaction_currency_id FK
+        varchar_500 source_url
+        date verification_date
+        boolean is_demo
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    products {
+        bigint id PK
+        varchar_200 name
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    product_sub_sectors {
+        bigint id PK
+        bigint product_id FK
+        bigint sub_sector_id FK
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    dealer_products {
+        bigint id PK
+        bigint dealer_id FK
+        bigint product_id FK
+        smallint sort_order
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    communications {
+        bigint id PK
+        bigint company_id FK
+        bigint dealer_id FK
+        bigint communication_type_id FK
+        bigint communication_status_id FK
+        varchar_10 direction
+        bigint sender_user_id FK
+        varchar_200 sender_name
+        varchar_200 recipient_name
+        varchar_254 recipient_email
+        varchar_200 subject
+        text body
+        timestamptz occurred_on
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    communication_attachments {
+        bigint id PK
+        bigint communication_id FK
+        varchar_255 file_name
+        varchar_150 content_type
+        bigint size_bytes
+        varchar_500 storage_path
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    sales_uploads {
+        bigint id PK
+        bigint company_id FK
+        bigint uploaded_by_user_id FK
+        varchar_255 file_name
+        varchar_255 original_file_name
+        varchar_100 sheet_name
+        varchar_150 content_type
+        bigint file_size_bytes
+        char_64 file_sha256
+        varchar_20 storage_backend
+        varchar_500 storage_path
+        varchar_1000 physical_path
+        varchar_20 status
+        int total_rows
+        int valid_rows
+        int skipped_rows
+        int column_count
+        jsonb column_mapping
+        varchar_1000 error_message
+        timestamptz processed_on
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    sales_upload_columns {
+        bigint id PK
+        bigint sales_upload_id FK
+        smallint column_index
+        varchar_3 column_letter
+        varchar_255 header_name
+        varchar_255 data_key
+        varchar_50 mapped_field
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    sales_upload_rows {
+        bigint id PK
+        bigint sales_upload_id FK
+        int row_number
+        jsonb row_data
+        boolean is_valid
+        bigint sales_record_id FK
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    sales_upload_issues {
+        bigint id PK
+        bigint sales_upload_id FK
+        int row_number
+        varchar_10 severity
+        varchar_1000 message
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    sales_records {
+        bigint id PK
+        bigint company_id FK
+        bigint sales_upload_id FK
+        int row_number
+        varchar_250 customer_name
+        bigint dealer_id FK
+        varchar_100 country_name
+        bigint country_id FK
+        varchar_200 location
+        smallint sales_year
+        smallint sales_month
+        date period_start
+        varchar_250 product_name
+        bigint product_id FK
+        varchar_30 unit_of_measure
+        numeric_18_4 quantity
+        numeric_18_2 amount
+        varchar_10 currency_code
+        bigint currency_id FK
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    exchange_rates {
+        bigint id PK
+        bigint company_id FK
+        bigint currency_id FK
+        numeric_18_8 rate_to_usd
+        date effective_date
+        varchar_200 source
+        boolean is_active &quot;audit&quot;
+        bigint created_by &quot;audit&quot;
+        timestamptz created_on &quot;audit&quot;
+        bigint modified_by &quot;audit&quot;
+        timestamptz modified_on &quot;audit&quot;
+    }
+    communications ||--o{ communication_attachments : &quot;communication_id&quot;
+    communication_statuses ||--o{ communications : &quot;communication_status_id&quot;
+    communication_types ||--o{ communications : &quot;communication_type_id&quot;
+    companies ||--o{ communications : &quot;company_id&quot;
+    dealers ||--o{ communications : &quot;dealer_id&quot;
+    users |o--o{ communications : &quot;sender_user_id&quot;
+    countries |o--o{ companies : &quot;country_id&quot;
+    regions |o--o{ companies : &quot;region_id&quot;
+    sectors |o--o{ companies : &quot;sector_id&quot;
+    dealers ||--o{ dealer_products : &quot;dealer_id&quot;
+    products ||--o{ dealer_products : &quot;product_id&quot;
+    companies ||--o{ dealers : &quot;company_id&quot;
+    countries ||--o{ dealers : &quot;country_id&quot;
+    dealer_statuses ||--o{ dealers : &quot;dealer_status_id&quot;
+    dealer_types ||--o{ dealers : &quot;dealer_type_id&quot;
+    currencies |o--o{ dealers : &quot;last_transaction_currency_id&quot;
+    regions |o--o{ dealers : &quot;region_id&quot;
+    sectors |o--o{ dealers : &quot;sector_id&quot;
+    companies |o--o{ exchange_rates : &quot;company_id&quot;
+    currencies ||--o{ exchange_rates : &quot;currency_id&quot;
+    users ||--o{ password_reset_tokens : &quot;user_id&quot;
+    products ||--o{ product_sub_sectors : &quot;product_id&quot;
+    sub_sectors ||--o{ product_sub_sectors : &quot;sub_sector_id&quot;
+    companies ||--o{ sales_records : &quot;company_id&quot;
+    countries |o--o{ sales_records : &quot;country_id&quot;
+    currencies |o--o{ sales_records : &quot;currency_id&quot;
+    dealers |o--o{ sales_records : &quot;dealer_id&quot;
+    products |o--o{ sales_records : &quot;product_id&quot;
+    sales_uploads ||--o{ sales_records : &quot;sales_upload_id&quot;
+    sales_uploads ||--o{ sales_upload_columns : &quot;sales_upload_id&quot;
+    sales_uploads ||--o{ sales_upload_issues : &quot;sales_upload_id&quot;
+    sales_records |o--o{ sales_upload_rows : &quot;sales_record_id&quot;
+    sales_uploads ||--o{ sales_upload_rows : &quot;sales_upload_id&quot;
+    companies ||--o{ sales_uploads : &quot;company_id&quot;
+    users ||--o{ sales_uploads : &quot;uploaded_by_user_id&quot;
+    sectors ||--o{ sub_sectors : &quot;sector_id&quot;
+    users ||--o{ user_sessions : &quot;user_id&quot;
+    users ||--o| user_settings : &quot;user_id&quot;
+    companies ||--o{ users : &quot;company_id&quot;
+    countries |o--o{ users : &quot;country_id&quot;
+    regions |o--o{ users : &quot;region_id&quot;
+    roles ||--o{ users : &quot;role_id&quot;</pre></section>
+</main>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', er: { useMaxWidth: false } });
+</script>
+</body>
+</html>

@@ -1,0 +1,761 @@
+{
+  "country": "India",
+  "title": "India Dealer & Distributor Sector List",
+  "sectors": [
+    {
+      "sector": "FMCG & Consumer Products",
+      "sub_sectors": [
+        "Biscuits & Bakery",
+        "Confectionery",
+        "Chocolates",
+        "Namkeen & Snacks",
+        "Packaged Foods",
+        "Ready-to-Eat Foods",
+        "Spices & Masala",
+        "Edible Oils",
+        "Rice, Flour & Pulses",
+        "Salt",
+        "Tea",
+        "Coffee",
+        "Packaged Drinking Water",
+        "Soft Drinks",
+        "Juices & Beverages",
+        "Energy Drinks",
+        "Tobacco Products",
+        "Home Care",
+        "Detergents",
+        "Dishwashing Products",
+        "Floor Cleaners",
+        "Toilet Cleaners",
+        "Air Fresheners",
+        "Personal Care",
+        "Cosmetics",
+        "Perfumes & Deodorants",
+        "Hair Care",
+        "Skin Care",
+        "Oral Care",
+        "Baby Care"
+      ]
+    },
+    {
+      "sector": "Electrical & Electrical Equipment",
+      "sub_sectors": [
+        "Electrical Switches",
+        "Switchgear",
+        "MCB & MCCB",
+        "Distribution Boards",
+        "Electrical Panels",
+        "Wires & Cables",
+        "Industrial Cables",
+        "House Wires",
+        "Transformers",
+        "Motors",
+        "Generators",
+        "Electrical Control Equipment",
+        "Contactors",
+        "Relays",
+        "Capacitors",
+        "Electrical Accessories",
+        "Modular Switches",
+        "Sockets & Plugs",
+        "Fans",
+        "Exhaust Fans",
+        "LED Bulbs",
+        "LED Lights",
+        "Commercial Lighting",
+        "Industrial Lighting",
+        "Street Lighting",
+        "Solar Lighting",
+        "Batteries",
+        "Inverters",
+        "UPS",
+        "Stabilizers",
+        "Power Quality Equipment",
+        "Earthing Products",
+        "Lightning Protection"
+      ]
+    },
+    {
+      "sector": "Electronics & Consumer Electronics",
+      "sub_sectors": [
+        "Televisions",
+        "Refrigerators",
+        "Washing Machines",
+        "Air Conditioners",
+        "Air Coolers",
+        "Microwaves",
+        "Kitchen Appliances",
+        "Small Appliances",
+        "Smartphones",
+        "Tablets",
+        "Laptops",
+        "Computers",
+        "Printers",
+        "Monitors",
+        "CCTV",
+        "Security Cameras",
+        "Access Control Systems",
+        "Video Door Phones",
+        "Speakers",
+        "Audio Equipment",
+        "Set Top Boxes",
+        "Electronic Components",
+        "IoT Devices",
+        "Smart Home Products"
+      ]
+    },
+    {
+      "sector": "Automobile & Auto Aftermarket",
+      "sub_sectors": [
+        "Passenger Cars",
+        "Commercial Vehicles",
+        "Two Wheelers",
+        "Three Wheelers",
+        "Tractor Parts",
+        "Auto Spare Parts",
+        "Engine Parts",
+        "Brake Parts",
+        "Clutch Parts",
+        "Suspension Parts",
+        "Bearings",
+        "Automotive Batteries",
+        "Tyres",
+        "Lubricants",
+        "Engine Oils",
+        "Coolants",
+        "Car Accessories",
+        "Motorcycle Accessories",
+        "Filters",
+        "Auto Electricals",
+        "Car Care Products",
+        "Garage Equipment",
+        "EV Components",
+        "EV Charging Equipment"
+      ]
+    },
+    {
+      "sector": "Industrial Machinery & Equipment",
+      "sub_sectors": [
+        "Industrial Machinery",
+        "Machine Tools",
+        "CNC Machines",
+        "Welding Equipment",
+        "Compressors",
+        "Pumps",
+        "Motors",
+        "Gearboxes",
+        "Bearings",
+        "Valves",
+        "Industrial Automation",
+        "Robotics",
+        "Material Handling Equipment",
+        "Cranes",
+        "Hoists",
+        "Forklifts",
+        "Generators",
+        "Industrial Boilers",
+        "Industrial Furnaces",
+        "Packaging Machinery",
+        "Food Processing Machinery",
+        "Textile Machinery",
+        "Printing Machinery",
+        "Construction Machinery"
+      ]
+    },
+    {
+      "sector": "Tools & Hardware",
+      "sub_sectors": [
+        "Hand Tools",
+        "Power Tools",
+        "Cutting Tools",
+        "Welding Tools",
+        "Measuring Instruments",
+        "Industrial Tools",
+        "Hardware Products",
+        "Fasteners",
+        "Nuts & Bolts",
+        "Screws",
+        "Anchors",
+        "Locks",
+        "Door Hardware",
+        "Furniture Hardware",
+        "Abrasives",
+        "Adhesives",
+        "Sealants"
+      ]
+    },
+    {
+      "sector": "Building Materials & Construction",
+      "sub_sectors": [
+        "Cement",
+        "Steel",
+        "TMT Bars",
+        "Pipes",
+        "PVC Pipes",
+        "CPVC Pipes",
+        "HDPE Pipes",
+        "Pipe Fittings",
+        "Plumbing Products",
+        "Sanitaryware",
+        "Bathroom Fittings",
+        "Tiles",
+        "Marble",
+        "Granite",
+        "Plywood",
+        "MDF",
+        "Laminates",
+        "Doors",
+        "Windows",
+        "Glass",
+        "Roofing Products",
+        "Paints",
+        "Waterproofing Products",
+        "Construction Chemicals",
+        "Gypsum",
+        "AAC Blocks",
+        "Bricks",
+        "Insulation",
+        "False Ceiling Products",
+        "Modular Construction Products"
+      ]
+    },
+    {
+      "sector": "Agriculture & Agri Inputs",
+      "sub_sectors": [
+        "Seeds",
+        "Fertilizers",
+        "Organic Fertilizers",
+        "Bio Fertilizers",
+        "Pesticides",
+        "Insecticides",
+        "Fungicides",
+        "Herbicides",
+        "Plant Growth Promoters",
+        "Micronutrients",
+        "Drip Irrigation",
+        "Sprinkler Systems",
+        "Agricultural Machinery",
+        "Tractors",
+        "Power Tillers",
+        "Farm Implements",
+        "Agricultural Pumps",
+        "Greenhouse Equipment",
+        "Solar Agricultural Pumps",
+        "Animal Feed",
+        "Poultry Products",
+        "Dairy Equipment"
+      ]
+    },
+    {
+      "sector": "Pharmaceuticals & Healthcare",
+      "sub_sectors": [
+        "Allopathic Medicines",
+        "Generic Medicines",
+        "OTC Medicines",
+        "Ayurvedic Medicines",
+        "Homeopathic Medicines",
+        "Veterinary Medicines",
+        "Surgical Products",
+        "Medical Devices",
+        "Diagnostic Equipment",
+        "Laboratory Equipment",
+        "Hospital Equipment",
+        "Dental Equipment",
+        "Orthopaedic Products",
+        "Healthcare Consumables",
+        "Medical Disposables",
+        "Medical Gloves",
+        "Masks",
+        "Hospital Furniture",
+        "Pharma Ingredients"
+      ]
+    },
+    {
+      "sector": "Chemicals",
+      "sub_sectors": [
+        "Industrial Chemicals",
+        "Specialty Chemicals",
+        "Construction Chemicals",
+        "Water Treatment Chemicals",
+        "Textile Chemicals",
+        "Paint Chemicals",
+        "Adhesives",
+        "Solvents",
+        "Cleaning Chemicals",
+        "Agricultural Chemicals",
+        "Fertilizer Chemicals",
+        "Rubber Chemicals",
+        "Plastic Chemicals",
+        "Food Chemicals",
+        "Laboratory Chemicals"
+      ]
+    },
+    {
+      "sector": "Energy & Power",
+      "sub_sectors": [
+        "Solar Panels",
+        "Solar Inverters",
+        "Solar Batteries",
+        "Solar Pumps",
+        "Solar Street Lights",
+        "Wind Energy Equipment",
+        "Batteries",
+        "UPS",
+        "Power Backup",
+        "Generators",
+        "Transformers",
+        "Power Transmission Equipment",
+        "EV Charging Stations",
+        "Energy Storage Systems"
+      ]
+    },
+    {
+      "sector": "Telecom & Networking",
+      "sub_sectors": [
+        "Telecom Equipment",
+        "Fiber Optic Cables",
+        "Network Cables",
+        "Routers",
+        "Network Switches",
+        "WiFi Equipment",
+        "Enterprise Networking",
+        "Telecom Accessories",
+        "Fiber Equipment",
+        "Antennas",
+        "Tower Equipment",
+        "Data Center Equipment",
+        "Communication Equipment"
+      ]
+    },
+    {
+      "sector": "IT & Computer Products",
+      "sub_sectors": [
+        "Desktop Computers",
+        "Laptops",
+        "Servers",
+        "Storage",
+        "Networking",
+        "Printers",
+        "Scanners",
+        "UPS",
+        "Software",
+        "Cybersecurity",
+        "Cloud Services",
+        "IT Accessories",
+        "Computer Peripherals",
+        "POS Machines",
+        "Barcode Scanners",
+        "Biometric Systems"
+      ]
+    },
+    {
+      "sector": "Security & Surveillance",
+      "sub_sectors": [
+        "CCTV Cameras",
+        "DVR",
+        "NVR",
+        "Access Control",
+        "Biometric Devices",
+        "Video Door Phones",
+        "Fire Alarms",
+        "Burglar Alarms",
+        "Intrusion Detection",
+        "Security Gates",
+        "Metal Detectors",
+        "GPS Tracking",
+        "Smart Locks",
+        "Security Systems"
+      ]
+    },
+    {
+      "sector": "Safety Products",
+      "sub_sectors": [
+        "Safety Helmets",
+        "Safety Shoes",
+        "Safety Gloves",
+        "Safety Jackets",
+        "Industrial PPE",
+        "Respirators",
+        "Eye Protection",
+        "Ear Protection",
+        "Fall Protection Equipment",
+        "Fire Safety Equipment",
+        "First Aid Products",
+        "Industrial Safety Products"
+      ]
+    },
+    {
+      "sector": "Fire & Emergency Equipment",
+      "sub_sectors": [
+        "Fire Extinguishers",
+        "Fire Alarms",
+        "Fire Hydrants",
+        "Fire Pumps",
+        "Fire Suppression Systems",
+        "Smoke Detectors",
+        "Emergency Lighting",
+        "Fire Doors",
+        "Fire Hoses",
+        "Rescue Equipment"
+      ]
+    },
+    {
+      "sector": "Packaging",
+      "sub_sectors": [
+        "Corrugated Boxes",
+        "Flexible Packaging",
+        "Plastic Packaging",
+        "Glass Packaging",
+        "Bottles",
+        "Containers",
+        "Labels",
+        "Printing",
+        "Tapes",
+        "Stretch Film",
+        "Shrink Film",
+        "Packaging Machinery",
+        "Food Packaging",
+        "Pharmaceutical Packaging"
+      ]
+    },
+    {
+      "sector": "Textiles & Garments",
+      "sub_sectors": [
+        "Readymade Garments",
+        "Mens Wear",
+        "Womens Wear",
+        "Kids Wear",
+        "Innerwear",
+        "Uniforms",
+        "Sportswear",
+        "Footwear",
+        "Fabrics",
+        "Yarn",
+        "Home Textiles",
+        "Towels",
+        "Bedsheets",
+        "Curtains",
+        "Blankets"
+      ]
+    },
+    {
+      "sector": "Footwear & Leather",
+      "sub_sectors": [
+        "Shoes",
+        "Sports Shoes",
+        "Safety Shoes",
+        "Sandals",
+        "Slippers",
+        "School Shoes",
+        "Leather Products",
+        "Bags",
+        "Belts",
+        "Wallets",
+        "Travel Bags"
+      ]
+    },
+    {
+      "sector": "Furniture & Home",
+      "sub_sectors": [
+        "Home Furniture",
+        "Office Furniture",
+        "Modular Furniture",
+        "Kitchen Furniture",
+        "Mattresses",
+        "Office Chairs",
+        "School Furniture",
+        "Hospital Furniture",
+        "Home Decor",
+        "Home Furnishings",
+        "Decorative Lighting",
+        "Kitchenware",
+        "Housewares"
+      ]
+    },
+    {
+      "sector": "Stationery & Office Supplies",
+      "sub_sectors": [
+        "Stationery",
+        "Notebooks",
+        "Pens",
+        "Paper",
+        "Office Supplies",
+        "School Supplies",
+        "Art Supplies",
+        "Printers & Consumables",
+        "Files & Folders",
+        "Office Furniture",
+        "Educational Products"
+      ]
+    },
+    {
+      "sector": "Hospitality & HoReCa",
+      "sub_sectors": [
+        "Hotel Supplies",
+        "Restaurant Supplies",
+        "Commercial Kitchen Equipment",
+        "Commercial Refrigeration",
+        "Bakery Equipment",
+        "Catering Equipment",
+        "Hotel Amenities",
+        "Housekeeping Products",
+        "Food Service Products",
+        "Restaurant Furniture"
+      ]
+    },
+    {
+      "sector": "Pet Care",
+      "sub_sectors": [
+        "Pet Food",
+        "Pet Medicines",
+        "Pet Accessories",
+        "Pet Grooming Products",
+        "Pet Toys",
+        "Pet Healthcare",
+        "Aquarium Products",
+        "Veterinary Products"
+      ]
+    },
+    {
+      "sector": "Water & Water Treatment",
+      "sub_sectors": [
+        "Water Purifiers",
+        "RO Systems",
+        "Water Filters",
+        "Commercial RO",
+        "Industrial RO",
+        "Water Pumps",
+        "Water Treatment Plants",
+        "Sewage Treatment Equipment",
+        "Effluent Treatment Equipment",
+        "Water Testing Equipment",
+        "Pipes & Fittings"
+      ]
+    },
+    {
+      "sector": "HVAC & Refrigeration",
+      "sub_sectors": [
+        "Air Conditioners",
+        "Commercial AC",
+        "Industrial HVAC",
+        "Air Coolers",
+        "Refrigeration Equipment",
+        "Compressors",
+        "Chillers",
+        "Cold Storage Equipment",
+        "Ventilation Equipment",
+        "Ducting",
+        "HVAC Accessories"
+      ]
+    },
+    {
+      "sector": "Petroleum, Lubricants & Industrial Oils",
+      "sub_sectors": [
+        "Engine Oils",
+        "Gear Oils",
+        "Hydraulic Oils",
+        "Greases",
+        "Industrial Lubricants",
+        "Coolants",
+        "Brake Fluids",
+        "Automotive Lubricants",
+        "Industrial Fuels",
+        "Petroleum Products"
+      ]
+    },
+    {
+      "sector": "Mining & Metals",
+      "sub_sectors": [
+        "Iron & Steel",
+        "Aluminium",
+        "Copper",
+        "Brass",
+        "Stainless Steel",
+        "Metal Sheets",
+        "Metal Pipes",
+        "Castings",
+        "Forgings",
+        "Mining Equipment",
+        "Welding Consumables",
+        "Industrial Metals"
+      ]
+    },
+    {
+      "sector": "Printing & Publishing",
+      "sub_sectors": [
+        "Printing Machines",
+        "Digital Printing",
+        "Offset Printing",
+        "Printing Consumables",
+        "Paper",
+        "Printing Inks",
+        "Packaging Printing",
+        "Labels",
+        "Books",
+        "Educational Publications"
+      ]
+    },
+    {
+      "sector": "Education & Institutional Products",
+      "sub_sectors": [
+        "School Supplies",
+        "Educational Toys",
+        "Laboratory Equipment",
+        "School Furniture",
+        "Smart Classrooms",
+        "Projectors",
+        "Digital Boards",
+        "Educational Software",
+        "Books",
+        "Training Equipment"
+      ]
+    },
+    {
+      "sector": "Sports & Fitness",
+      "sub_sectors": [
+        "Sports Equipment",
+        "Gym Equipment",
+        "Fitness Equipment",
+        "Sportswear",
+        "Sports Shoes",
+        "Outdoor Equipment",
+        "School Sports Products",
+        "Fitness Accessories"
+      ]
+    },
+    {
+      "sector": "Toys & Children's Products",
+      "sub_sectors": [
+        "Toys",
+        "Educational Toys",
+        "Baby Products",
+        "Kids Furniture",
+        "Baby Care Products",
+        "School Products",
+        "Games",
+        "Sports Toys"
+      ]
+    },
+    {
+      "sector": "Renewable & Green Products",
+      "sub_sectors": [
+        "Solar Products",
+        "Wind Energy Products",
+        "EV Products",
+        "Battery Storage",
+        "Energy Efficient Products",
+        "LED Products",
+        "Solar Pumps",
+        "Solar Water Heaters",
+        "Waste Management Equipment",
+        "Recycling Equipment",
+        "Water Treatment Products"
+      ]
+    },
+    {
+      "sector": "Logistics & Material Handling",
+      "sub_sectors": [
+        "Forklifts",
+        "Pallet Trucks",
+        "Warehouse Equipment",
+        "Racking Systems",
+        "Conveyors",
+        "Packaging Equipment",
+        "Barcode Systems",
+        "Weighing Machines",
+        "Warehouse Automation"
+      ]
+    },
+    {
+      "sector": "Scientific & Laboratory",
+      "sub_sectors": [
+        "Laboratory Instruments",
+        "Testing Equipment",
+        "Analytical Instruments",
+        "Microscopes",
+        "Laboratory Chemicals",
+        "Lab Consumables",
+        "Scientific Equipment",
+        "Calibration Equipment",
+        "Research Equipment"
+      ]
+    },
+    {
+      "sector": "Defence & Aerospace",
+      "sub_sectors": [
+        "Defence Equipment",
+        "Aerospace Components",
+        "Surveillance Equipment",
+        "Communication Equipment",
+        "Industrial Components",
+        "Safety Equipment",
+        "Engineering Products"
+      ]
+    },
+    {
+      "sector": "Marine & Shipping",
+      "sub_sectors": [
+        "Marine Equipment",
+        "Marine Pumps",
+        "Marine Valves",
+        "Marine Engines",
+        "Marine Electricals",
+        "Navigation Equipment",
+        "Marine Safety Equipment",
+        "Ship Components"
+      ]
+    },
+    {
+      "sector": "Railway & Infrastructure",
+      "sub_sectors": [
+        "Railway Components",
+        "Signalling Equipment",
+        "Railway Electrical Equipment",
+        "Construction Equipment",
+        "Infrastructure Products",
+        "Track Equipment",
+        "Railway Safety Equipment"
+      ]
+    },
+    {
+      "sector": "Jewellery & Watches",
+      "sub_sectors": [
+        "Gold Jewellery",
+        "Silver Jewellery",
+        "Diamond Jewellery",
+        "Artificial Jewellery",
+        "Watches",
+        "Jewellery Machinery",
+        "Jewellery Packaging"
+      ]
+    },
+    {
+      "sector": "Beauty & Wellness",
+      "sub_sectors": [
+        "Cosmetics",
+        "Salon Products",
+        "Hair Care",
+        "Skin Care",
+        "Beauty Equipment",
+        "Spa Products",
+        "Personal Wellness",
+        "Fitness & Wellness Products"
+      ]
+    },
+    {
+      "sector": "Tobacco & Related Products",
+      "sub_sectors": [
+        "Cigarettes",
+        "Cigars",
+        "Tobacco",
+        "Bidi",
+        "Pan Masala",
+        "Chewing Tobacco",
+        "Mouth Fresheners",
+        "Tobacco Retail Accessories"
+      ]
+    }
+  ]
+}
+ 
+ 

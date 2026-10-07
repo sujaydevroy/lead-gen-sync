@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+.env*.local
+.env
+npm-debug.log*
+.DS_Store
+
+# Backend (Python)
+backend/.venv/
+backend/storage/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
