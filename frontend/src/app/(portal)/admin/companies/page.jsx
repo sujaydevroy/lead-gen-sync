@@ -50,7 +50,7 @@ export default function CompaniesPage() {
     <>
       <PageHeader
         title="Companies"
-        subtitle="Customer organizations, their users and dealers"
+        subtitle="Clients: each company and its user"
         actions={
           <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setCreating(true)}>
             New company
@@ -62,7 +62,7 @@ export default function CompaniesPage() {
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ p: 2, alignItems: { sm: 'center' } }}>
           <TextField
             size="small"
-            placeholder="Search by name or company ID"
+            placeholder="Search by company, company ID, user or email"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             sx={{ flexGrow: 1, maxWidth: { sm: 420 } }}
@@ -102,9 +102,9 @@ export default function CompaniesPage() {
               <TableHead>
                 <TableRow>
                   <TableCell>Company</TableCell>
+                  <TableCell>User</TableCell>
                   <TableCell>Sector</TableCell>
                   <TableCell>Location</TableCell>
-                  <TableCell align="right">Users</TableCell>
                   <TableCell align="right">Dealers</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Created</TableCell>
@@ -132,9 +132,20 @@ export default function CompaniesPage() {
                         </Box>
                       </Stack>
                     </TableCell>
+                    <TableCell>
+                      {company.user ? (
+                        <>
+                          <Typography variant="body2">{company.user.name}</Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', wordBreak: 'break-all' }}>
+                            {company.user.email}
+                          </Typography>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
                     <TableCell>{company.sector || '—'}</TableCell>
                     <TableCell>{[company.address?.city, company.address?.country].filter(Boolean).join(', ') || '—'}</TableCell>
-                    <TableCell align="right">{formatNumber(company.userCount)}</TableCell>
                     <TableCell align="right">{formatNumber(company.dealerCount)}</TableCell>
                     <TableCell>
                       <StatusBadge status={company.isActive ? 'Active' : 'Inactive'} />

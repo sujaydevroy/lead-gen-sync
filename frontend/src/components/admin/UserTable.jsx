@@ -16,6 +16,7 @@ import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import LockOpenRoundedIcon from '@mui/icons-material/LockOpenRounded';
 import PasswordRoundedIcon from '@mui/icons-material/PasswordRounded';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import { formatDate } from '@/lib/format';
 
 function StatusChips({ user }) {
@@ -32,10 +33,24 @@ function StatusChips({ user }) {
 }
 
 /**
- * Users of one company. Read-only for system administrators; with `manage`, a Company Administrator
+ * Users of one company. With `manage`, a Company Administrator changes roles inline and activates /
+ * deactivates; with `onEdit`, a System Administrator edits details and role in a dialog. Both can unlock
+ * accounts and set temporary passwords.
  * changes roles, activates / deactivates, unlocks and sets temporary passwords.
  */
-export default function UserTable({ users, manage = false, roles = [], currentUserId, busyId, onChangeRole, onToggleActive, onUnlock, onSetPassword }) {
+export default function UserTable({
+  users,
+  manage = false,
+  roles = [],
+  currentUserId,
+  busyId,
+  onChangeRole,
+  onToggleActive,
+  onEdit,
+  onUnlock,
+  onSetPassword,
+}) {
+  const actions = manage || Boolean(onEdit);
   if (!users.length) {
     return (
       <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>
@@ -53,7 +68,7 @@ export default function UserTable({ users, manage = false, roles = [], currentUs
             <TableCell>Role</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Last sign-in</TableCell>
-            {manage && <TableCell align="right">Actions</TableCell>}
+            {actions && <TableCell align="right">Actions</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -102,18 +117,29 @@ export default function UserTable({ users, manage = false, roles = [], currentUs
                   <StatusChips user={user} />
                 </TableCell>
                 <TableCell>{user.lastLoginOn ? formatDate(user.lastLoginOn, { withTime: true }) : 'Never'}</TableCell>
-                {manage && (
+                {actions && (
                   <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                    <Tooltip title={self ? 'You cannot deactivate yourself' : user.isActive ? 'Deactivate user' : 'Activate user'}>
-                      <span>
-                        <Switch
-                          checked={user.isActive}
-                          disabled={self || busy}
-                          onChange={(e) => onToggleActive(user, e.target.checked)}
-                          slotProps={{ input: { 'aria-label': `${user.name} active` } }}
-                        />
-                      </span>
-                    </Tooltip>
+                    {manage && (
+                      <Tooltip title={self ? 'You cannot deactivate yourself' : user.isActive ? 'Deactivate user' : 'Activate user'}>
+                        <span>
+                          <Switch
+                            checked={user.isActive}
+                            disabled={self || busy}
+                            onChange={(e) => onToggleActive(user, e.target.checked)}
+                            slotProps={{ input: { 'aria-label': `${user.name} active` } }}
+                          />
+                        </span>
+                      </Tooltip>
+                    )}
+                    {onEdit && (
+                      <Tooltip title="Edit user">
+                        <span>
+                          <IconButton size="small" disabled={busy} onClick={() => onEdit(user)} aria-label={`Edit ${user.name}`}>
+                            <EditRoundedIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    )}
                     <Tooltip title="Unlock account">
                       <span>
                         <IconButton size="small" disabled={!user.isLocked || busy} onClick={() => onUnlock(user)} aria-label={`Unlock ${user.name}`}>

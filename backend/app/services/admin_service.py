@@ -1,6 +1,9 @@
-"""System administration: every customer company (create, edit, activate / deactivate) and its users (read-only).
+"""System administration: every customer company (create, edit, activate / deactivate) and its user.
 
-The users of a company are managed by its own Company Administrator (see company_user_service).
+Demo simplification (no table changes): a company is shown as ONE client with ONE user (1:1). The mapping is
+done here: a company's user is its primary user = the first user created for it (lowest id), normally the
+administrator created together with the company. The tables still allow more users per company, and the
+company-level user management (company_user_service, /users) still exists but is hidden in the UI for now.
 """
 
 from __future__ import annotations
@@ -12,8 +15,8 @@ from app.core.errors import ApiError, not_found
 from app.core.roles import COMPANY_ADMIN
 from app.core.security import hash_password
 from app.models import Company, Country, Currency, Dealer, DealerStatus, DealerType, Region, Role, Sector, User
-from app.schemas.admin import AdminCompanyOut, AdminLookups, CompanyCreate, CompanyFields, ManagedUserOut
-from app.services import auth_service
+from app.schemas.admin import AdminCompanyOut, AdminLookups, AdminUserUpdate, CompanyCreate, CompanyFields, ManagedUserOut
+from app.services import auth_service, company_user_service
 from app.services.codes import next_code
 from app.services.company_service import company_to_out
 from app.services.company_user_service import user_to_managed_out
@@ -40,32 +43,56 @@ def _counts(db: Session, model, company_ids: list[int]) -> dict[int, int]:
     return dict(rows.all())
 
 
-def _to_out(company: Company, users: int, dealers: int) -> AdminCompanyOut:
+def primary_users(db: Session, company_ids: list[int]) -> dict[int, User]:
+    """company id -> its primary user (the first one created): the 1:1 company <-> user mapping."""
+    if not company_ids:
+        return {}
+    found: dict[int, User] = {}
+    for user in db.scalars(select(User).where(User.company_id.in_(company_ids)).order_by(User.company_id, User.id)):
+        found.setdefault(user.company_id, user)
+    return found
+
+
+def primary_user(db: Session, company: Company) -> User:
+    user = primary_users(db, [company.id]).get(company.id)
+    if user is None:
+        raise not_found("User")
+    return user
+
+
+def _to_out(company: Company, users: int, dealers: int, user: User | None) -> AdminCompanyOut:
     return AdminCompanyOut(
         **company_to_out(company).model_dump(),
         is_active=company.is_active,
         user_count=users,
         dealer_count=dealers,
         created_on=company.created_on,
+        user=user_to_managed_out(user) if user else None,
     )
 
 
 def _one_out(db: Session, company: Company) -> AdminCompanyOut:
     ids = [company.id]
-    return _to_out(company, _counts(db, User, ids).get(company.id, 0), _counts(db, Dealer, ids).get(company.id, 0))
+    return _to_out(
+        company,
+        _counts(db, User, ids).get(company.id, 0),
+        _counts(db, Dealer, ids).get(company.id, 0),
+        primary_users(db, ids).get(company.id),
+    )
 
 
 def list_companies(db: Session, *, search: str = "", include_inactive: bool = True) -> list[AdminCompanyOut]:
     stmt = select(Company).where(Company.is_platform.is_(False)).order_by(func.lower(Company.name))
     if search.strip():
         term = f"%{search.strip()}%"
-        stmt = stmt.where(or_(Company.name.ilike(term), Company.company_code.ilike(term)))
+        user_match = select(User.company_id).where(or_(User.full_name.ilike(term), User.email.ilike(term)))
+        stmt = stmt.where(or_(Company.name.ilike(term), Company.company_code.ilike(term), Company.id.in_(user_match)))
     if not include_inactive:
         stmt = stmt.where(Company.is_active)
     companies = list(db.scalars(stmt))
     ids = [c.id for c in companies]
-    users, dealers = _counts(db, User, ids), _counts(db, Dealer, ids)
-    return [_to_out(c, users.get(c.id, 0), dealers.get(c.id, 0)) for c in companies]
+    users, dealers, primaries = _counts(db, User, ids), _counts(db, Dealer, ids), primary_users(db, ids)
+    return [_to_out(c, users.get(c.id, 0), dealers.get(c.id, 0), primaries.get(c.id)) for c in companies]
 
 
 def get_company(db: Session, company_code: str) -> Company:
@@ -158,12 +185,46 @@ def company_users(db: Session, company_code: str) -> list[ManagedUserOut]:
     return [user_to_managed_out(u) for u in users]
 
 
+def update_company_user(db: Session, company_code: str, user_code: str, payload: AdminUserUpdate) -> ManagedUserOut:
+    """Edit a company user's details / role. Adding and removing users stays with the company's own administrators."""
+    company = get_company(db, company_code)
+    user = db.scalar(select(User).where(User.company_id == company.id, User.user_code == user_code))
+    if user is None:
+        raise not_found("User")
+    sent = payload.model_fields_set
+    if "email" in sent and payload.email is not None:
+        other = auth_service.find_user_by_email(db, str(payload.email))
+        if other is not None and other.id != user.id:
+            raise ApiError(409, f"A user with the email {payload.email} already exists.")
+        user.email = str(payload.email)
+    if "name" in sent and payload.name is not None:
+        user.full_name = payload.name
+    if "job_title" in sent:
+        user.job_title = payload.job_title
+    if "phone" in sent:
+        user.phone = payload.phone
+    if "role" in sent and payload.role is not None and payload.role != user.role.name:
+        user.role_id = company_user_service.role_id_for(db, payload.role)
+    db.commit()
+    db.refresh(user)
+    return user_to_managed_out(user)
+
+
+def unlock_company_user(db: Session, company_code: str, user_code: str) -> ManagedUserOut:
+    return company_user_service.unlock_user(db, get_company(db, company_code), user_code)
+
+
+def set_company_user_password(db: Session, company_code: str, user_code: str, password: str) -> ManagedUserOut:
+    return company_user_service.set_user_password(db, get_company(db, company_code), user_code, password)
+
+
 def _names(db: Session, model, order_by) -> list[str]:
     return list(db.scalars(select(model.name).where(model.is_active).order_by(order_by)))
 
 
 def lookups(db: Session) -> AdminLookups:
     return AdminLookups(
+        roles=company_user_service.assignable_roles(db),
         countries=_names(db, Country, Country.name),
         regions=_names(db, Region, Region.sort_order),
         sectors=_names(db, Sector, Sector.name),

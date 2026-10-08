@@ -19,7 +19,7 @@ import CompanyFormFields, { EMPTY_COMPANY, formToPayload } from './CompanyFormFi
 
 const EMPTY_ADMIN = { adminName: '', adminEmail: '', adminJobTitle: '', adminPassword: '' };
 
-/** New company + its first Company Administrator (who then adds the company's other users). */
+/** New company + its one user (demo 1:1 mapping; the user gets the Company Administrator role). */
 export default function CreateCompanyDialog({ open, onClose, onCreated, lookups }) {
   const [serverError, setServerError] = useState('');
   const errorRef = useRef(null);
@@ -79,11 +79,10 @@ export default function CreateCompanyDialog({ open, onClose, onCreated, lookups 
           <CompanyFormFields register={register} control={control} errors={errors} lookups={lookups} />
 
           <Typography variant="overline" color="text.secondary" component="p" sx={{ mt: 3 }}>
-            Company administrator
+            User (login)
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            The first user of the company. They sign in with this temporary password, change it under My Profile, and add
-            the company&apos;s other users.
+            The company&apos;s user. They sign in with this temporary password and can change it under My Profile.
           </Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 6 }}>

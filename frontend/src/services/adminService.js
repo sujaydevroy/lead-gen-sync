@@ -51,14 +51,33 @@ const adminService = {
     return api.get(`/admin/companies/${encodeURIComponent(companyId)}/users`);
   },
 
+  /** changes = any of { name, email, jobTitle, phone, role } (only the fields sent change) */
+  updateCompanyUser(companyId, userId, changes) {
+    return api.patch(`/admin/companies/${encodeURIComponent(companyId)}/users/${encodeURIComponent(userId)}`, changes);
+  },
+
+  unlockCompanyUser(companyId, userId) {
+    return api.post(`/admin/companies/${encodeURIComponent(companyId)}/users/${encodeURIComponent(userId)}/unlock`);
+  },
+
+  setCompanyUserPassword(companyId, userId, password) {
+    return api.post(`/admin/companies/${encodeURIComponent(companyId)}/users/${encodeURIComponent(userId)}/password`, {
+      password,
+    });
+  },
+
+  /** { dealerCount } — dealers in the platform pool (not assigned to any client company). */
+  getDealerPool() {
+    return api.get('/admin/dealer-pool');
+  },
+
   /**
-   * Upload a dealer file into a company. The rows are saved in the company's dealers; the response is the
+   * Upload a dealer file into the platform dealer pool. The rows are saved in dcp.dealers; the response is the
    * outcome only: { inserted, updated, failed, issues: [{ row, message }], columnMapping, ignoredColumns, ... }
    */
-  async uploadDealers(companyId, file) {
+  async uploadDealers(file) {
     validateDealerFile(file);
     const form = new FormData();
-    form.append('companyId', companyId);
     form.append('file', file, file.name);
     return api.upload('/admin/dealer-uploads', form);
   },

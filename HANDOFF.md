@@ -20,22 +20,29 @@ dealers by country / region / sector and communicate with them, plus Excel sales
 - Frontend is fully wired to the API (no mock data left). Login → dealers (server-side filters, facets, pagination) →
   dealer details → messages with attachments → communications → dashboard → company / profile / settings →
   Upload Sales (stored server-side, "Recent uploads" reopen / download / delete) → Sales Forecast.
+- **Demo simplification (2026-10-08, user's decision — keep it, don't erase the hidden code):** only *admin*
+  (System Administrator) and *user*. Each company is shown with ONE user (1:1), mapped without table changes:
+  the company's first user (`admin_service.primary_users`), returned as `user` on `/admin/companies*`. The
+  company Users page is hidden by `FEATURES.companyUserManagement = false` in `frontend/src/lib/features.js`
+  (API `/users` still works); regular users only have My Profile for their own account.
 - **Roles (2026-10-08):** `System Administrator` = the platform owners (us). They belong to the hidden platform
   company `SYS-PLATFORM` (`companies.is_platform`), see only Companies / Dealer Upload / My Profile / Settings,
-  create / edit / deactivate companies (each new company gets its first Company Administrator), see each
-  company's users read-only, and upload dealer files (.xlsx / .xls / .csv / .json like dealers.json; upsert by
+  create / edit / deactivate companies (each new company gets its first Company Administrator), edit each
+  company's users (name, email, job title, phone, role, unlock, temporary password — not add / deactivate), and
+  upload dealer files into the **platform dealer pool** (no table changes: pool dealers are ordinary `dealers`
+  rows owned by the hidden platform company `SYS-PLATFORM`; dealers not given to any client yet; future matching logic will offer them to clients by industry / sector / products —
+  `product_sub_sectors` already maps products to sub-sectors). Tenant queries all filter by company_id, so pool
+  dealers are invisible to clients. Dealer files (.xlsx / .xls / .csv / .json like dealers.json; upsert by
   Dealer ID, row errors reported). Uploads are saved **only** in `dcp.dealers` + `dealer_products` / `products` /
   `product_sub_sectors` (no upload log table — the user asked for that; `created_by/modified_by` show who). `Company Administrator` manages its own company's users on the
   Users page (add with temporary password, role, activate / deactivate, unlock, set password). Everyone can
   change their own password under My Profile. Create a system admin with
   `.venv\Scripts\python -m app.cli create-sysadmin <email> --name "..."` (from `backend/`).
 - Backend: 34+ endpoints under `/api/v1`, cookie auth with refresh rotation + CSRF, tenant scoping by company.
-- **Supabase database is migrated to `0003_admin_dealer_uploads`; code head is `0004_drop_dealer_uploads`** —
-  run `.venv\Scripts\python -m app.cli setup` (from `backend/`) to apply 0004 (drops the unused
-  `dcp.dealer_uploads` table that the first version of 0003 created). Seeded (57 dealers, 40 sectors /
+- **Supabase database is migrated to `0004_drop_dealer_uploads` (head).** Seeded (57 dealers, 40 sectors /
   553 sub-sectors, company ABC Corporation, user john.smith@abc.com with a password the user chose — Claude
   does not know it).
-- Tests: backend **64 passed** (18 unit + 46 integration); `npx next build` (from `frontend/`) passes.
+- Tests: backend **67 passed** (18 unit + 49 integration); `npx next build` (from `frontend/`) passes.
 - Git: repo initialised, remote **`https://github.com/sujaydevroy/lead-gen-sync`**, branch **`master`**,
   pushed up to `0e0dcbb` (2026-10-08 restructure into `frontend/`, `backend/`, `database/`,
   `data-crawler-service/`). Three `.gitignore` files: root (secrets `.env*` except `.env.example`,

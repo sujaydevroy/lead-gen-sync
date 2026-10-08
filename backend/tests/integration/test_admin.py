@@ -44,8 +44,9 @@ def xlsx(rows: list[list]) -> bytes:
     return buffer.getvalue()
 
 
-def upload(client, company_id: str, content: bytes, name: str):
-    return client.post("/api/v1/admin/dealer-uploads", data={"companyId": company_id}, files={"file": (name, content)})
+def upload(client, company_id: str | None, content: bytes, name: str):
+    data = {"companyId": company_id} if company_id else {}
+    return client.post("/api/v1/admin/dealer-uploads", data=data, files={"file": (name, content)})
 
 
 def test_admin_endpoints_need_system_administrator(client):
@@ -257,3 +258,79 @@ def test_dealer_upload_rejections_and_template(client):
 def test_company_admin_cannot_use_sysadmin_upload_on_own_company(client):
     login(client, "john.smith@abc.com", DEMO_PASSWORD)
     assert upload(client, "CMP-10045", b"Dealer Name\nA\n", "x.csv").status_code == 403
+
+
+def test_dealer_upload_without_company_goes_to_the_pool(client):
+    """No companyId = platform dealer pool (the platform company); clients never see pool dealers."""
+    sysadmin(client)
+    before = client.get("/api/v1/admin/dealer-pool").json()["dealerCount"]
+    rows = [
+        ["Dealer ID", "Dealer Name", "Dealer Type", "Country", "Products"],
+        ["POOL-1", "Pool Electricals", "Distributor", "India", "MCB; Cables"],
+        ["", "Pool Traders", "Reseller", "Japan", ""],
+    ]
+    result = upload(client, None, xlsx(rows), "pool.xlsx").json()
+    assert result["companyId"] is None and result["companyName"] == "Dealer pool"
+    assert (result["inserted"], result["updated"], result["failed"]) == (2, 0, 0)
+    assert client.get("/api/v1/admin/dealer-pool").json()["dealerCount"] == before + 2
+
+    again = upload(client, None, xlsx(rows[:2]), "pool.xlsx").json()  # same Dealer ID -> update, not duplicate
+    assert (again["inserted"], again["updated"]) == (0, 1)
+
+    # Pool dealers are not in any company's dealer list.
+    login(client)
+    assert client.get("/api/v1/dealers/POOL-1").status_code == 404
+    assert client.get("/api/v1/dealers").json()["totalDealers"] == 57
+
+    from sqlalchemy import select
+
+    from app.core.database import get_session_factory
+    from app.models import Company, Dealer
+
+    with get_session_factory()() as db:
+        pool = db.scalar(select(Dealer).where(Dealer.dealer_code == "POOL-1"))
+        platform = db.scalar(select(Company).where(Company.company_code == "SYS-PLATFORM"))
+        # The pool is mapped onto the hidden platform company (no table changes).
+        assert pool.company_id == platform.id and [link.product.name for link in pool.product_links] == ["MCB", "Cables"]
+        assert "SYS-PLATFORM" not in [c["id"] for c in sysadmin(client).get("/api/v1/admin/companies").json()]
+
+
+def test_sysadmin_edits_company_users(client):
+    sysadmin(client)
+    code = new_company(client, "Edit Users Co", "admin@editusers.example")["id"]
+    user = client.get(f"/api/v1/admin/companies/{code}/users").json()[0]
+    base = f"/api/v1/admin/companies/{code}/users/{user['id']}"
+
+    edited = client.patch(base, json={"name": "Edna Editor", "jobTitle": "Head of Sales", "phone": "+91 98100 22222"})
+    assert edited.status_code == 200, edited.text
+    body = edited.json()
+    assert (body["name"], body["jobTitle"], body["phone"], body["role"]) == (
+        "Edna Editor",
+        "Head of Sales",
+        "+91 98100 22222",
+        "Company Administrator",
+    )
+    assert client.patch(base, json={"jobTitle": ""}).json()["jobTitle"] is None  # cleared; other fields kept
+    assert client.patch(base, json={"role": "Sales Manager"}).json()["role"] == "Sales Manager"
+    assert client.patch(base, json={"role": "System Administrator"}).status_code == 422
+    assert client.patch(base, json={"email": "john.smith@abc.com"}).status_code == 409
+    assert client.patch(base, json={"email": "edna@editusers.example"}).json()["email"] == "edna@editusers.example"
+    assert client.patch(f"/api/v1/admin/companies/CMP-10045/users/{user['id']}", json={"name": "Nope"}).status_code == 404
+
+    assert client.post(f"{base}/unlock").json()["isLocked"] is False
+    assert client.post(f"{base}/password", json={"password": "Edna-Temp-2026"}).status_code == 200
+    login(client, "edna@editusers.example", "Edna-Temp-2026")
+    assert client.patch(base, json={"name": "Self Edit"}).status_code == 403  # only system administrators
+    assert "roles" in sysadmin(client).get("/api/v1/admin/lookups").json()
+
+
+def test_company_has_one_user_mapping(client):
+    """Demo 1:1 mapping: each company is shown with one user, its first user (no table changes)."""
+    sysadmin(client)
+    abc = next(c for c in client.get("/api/v1/admin/companies").json() if c["id"] == "CMP-10045")
+    assert abc["user"]["email"] == "john.smith@abc.com" and abc["user"]["id"] == "USR-2001"  # first of several users
+    created = new_company(client, "One User Co", "solo@oneuser.example")
+    assert created["user"]["email"] == "solo@oneuser.example" and created["user"]["role"] == "Company Administrator"
+    assert client.get(f"/api/v1/admin/companies/{created['id']}").json()["user"]["name"] == "One User Co Admin"
+    found = client.get("/api/v1/admin/companies", params={"search": "solo@oneuser"}).json()  # search by the user too
+    assert [c["id"] for c in found] == [created["id"]]

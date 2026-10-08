@@ -82,13 +82,6 @@ class CompanyCreate(CompanyFields):
     admin: NewUserFields
 
 
-class AdminCompanyOut(CompanyOut):
-    is_active: bool
-    user_count: int
-    dealer_count: int
-    created_on: datetime
-
-
 # --- Users -----------------------------------------------------------------------------------
 
 
@@ -107,6 +100,14 @@ class ManagedUserOut(CamelModel):
     created_on: datetime
 
 
+class AdminCompanyOut(CompanyOut):
+    is_active: bool
+    user_count: int
+    dealer_count: int
+    created_on: datetime
+    user: ManagedUserOut | None = None  # the company's one user (1:1 demo mapping: its first user)
+
+
 class UserCreate(NewUserFields):
     role: str
 
@@ -118,11 +119,35 @@ class ManagedUserUpdate(CamelModel):
     is_active: bool | None = None
 
 
+class AdminUserUpdate(CamelModel):
+    """System administrators edit a company user's details and role (PATCH: only the fields sent change)."""
+
+    name: str | None = Field(default=None, min_length=2, max_length=150)
+    email: EmailStr | None = None
+    job_title: str | None = Field(default=None, max_length=80)
+    phone: str | None = Field(default=None, pattern=PHONE_PATTERN)
+    role: str | None = None
+
+    @field_validator("name", "email", mode="before")
+    @classmethod
+    def _strip(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("job_title", "phone", mode="before")
+    @classmethod
+    def _optional(cls, value):
+        return _blank_to_none(value)
+
+
 class PasswordSet(CamelModel):
     password: str = Field(min_length=1, max_length=200)
 
 
 # --- Dealer uploads (system administrators) ----------------------------------------------------
+
+
+class DealerPoolStats(CamelModel):
+    dealer_count: int
 
 
 class DealerUploadIssue(CamelModel):
@@ -133,7 +158,7 @@ class DealerUploadIssue(CamelModel):
 class DealerUploadOut(CamelModel):
     """Outcome of one upload (returned only; the rows themselves are saved in dcp.dealers)."""
 
-    company_id: str
+    company_id: str | None = None  # None = the platform dealer pool (held by the platform company)
     company_name: str
     file_name: str
     file_format: str
@@ -148,6 +173,7 @@ class DealerUploadOut(CamelModel):
 
 
 class AdminLookups(CamelModel):
+    roles: list[str]  # roles a company user can have
     countries: list[str]
     regions: list[str]
     sectors: list[str]

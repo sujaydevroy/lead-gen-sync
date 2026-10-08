@@ -1,4 +1,10 @@
-"""Dealer file upload (system administrators): .xlsx / .xls / .csv / .json rows -> dcp.dealers of one company.
+"""Dealer file upload (system administrators): .xlsx / .xls / .csv / .json rows -> dcp.dealers.
+
+By default rows go into the platform DEALER POOL: dealers that belong to no client yet and will later be matched
+to clients by industry / products. No table changes: the pool is mapped onto the hidden platform company
+(dcp.companies.is_platform, the company system administrators belong to), so pool dealers are ordinary
+dcp.dealers rows with company_id = that company and are never visible to clients. Passing a company code
+instead loads the rows into that client company's own dealers.
 
 Rows are saved directly in dcp.dealers and its product tables (dcp.dealer_products, dcp.products,
 dcp.product_sub_sectors); nothing else is stored about the file. created_by / modified_by on each dealer
@@ -23,11 +29,12 @@ from datetime import UTC, date, datetime
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.errors import ApiError
 from app.models import (
+    Company,
     Country,
     Currency,
     Dealer,
@@ -331,10 +338,29 @@ def _save_products(db: Session, wanted: list[tuple[Dealer, list[str]]]) -> None:
                 link.is_active = False
 
 
-def import_dealers(db: Session, company_code: str, *, content: bytes, file_name: str) -> DealerUploadOut:
-    company = get_company(db, company_code)
-    if not company.is_active:
+POOL_NAME = "Dealer pool"
+
+
+def pool_company(db: Session) -> Company:
+    """The platform company that holds the dealer pool (created by `python -m app.cli create-sysadmin`)."""
+    company = db.scalar(select(Company).where(Company.is_platform).order_by(Company.id).limit(1))
+    if company is None:
+        raise ApiError(409, "The platform company is missing. Run: python -m app.cli create-sysadmin <email>")
+    return company
+
+
+def pool_dealer_count(db: Session) -> int:
+    company = pool_company(db)
+    return db.scalar(select(func.count(Dealer.id)).where(Dealer.company_id == company.id, Dealer.is_active)) or 0
+
+
+def import_dealers(db: Session, company_code: str | None = None, *, content: bytes, file_name: str) -> DealerUploadOut:
+    """Upsert the file's dealers into the dealer pool (company_code None) or into one client company."""
+    company = get_company(db, company_code) if company_code else None
+    if company is not None and not company.is_active:
         raise ApiError(409, f"{company.name} is inactive. Activate the company before uploading dealers.")
+    company_id = company.id if company else pool_company(db).id
+    scope = Dealer.company_id == company_id
     table = read_table(content, file_name)
     mapping, ignored = map_columns(table.headers)
     if "dealer_code" not in mapping and "dealer_name" not in mapping:
@@ -344,7 +370,7 @@ def import_dealers(db: Session, company_code: str, *, content: bytes, file_name:
             "(Dealer ID, Dealer Name, Dealer Type, Status, Country, ...).",
         )
     lookups = _Lookups.load(db)
-    existing = {d.dealer_code.upper(): d for d in db.scalars(select(Dealer).where(Dealer.company_id == company.id))}
+    existing = {d.dealer_code.upper(): d for d in db.scalars(select(Dealer).where(scope))}
     next_number = max(highest_number(existing, "DLR") + 1, 1001)
     seen: set[str] = set()
     issues: list[DealerUploadIssue] = []
@@ -368,7 +394,7 @@ def import_dealers(db: Session, company_code: str, *, content: bytes, file_name:
                         next_number += 1
                     code = f"DLR-{next_number}"
                     next_number += 1
-                dealer = Dealer(company_id=company.id, dealer_code=code, is_demo=False)
+                dealer = Dealer(company_id=company_id, dealer_code=code, is_demo=False)
                 dealer.dealer_status_id = lookups.statuses.get("active")
                 created = values.get("created_at")  # dealers.json "created_at"; used for new dealers only
                 if created:
@@ -392,8 +418,8 @@ def import_dealers(db: Session, company_code: str, *, content: bytes, file_name:
     _save_products(db, product_updates)
     db.commit()
     return DealerUploadOut(
-        company_id=company.company_code,
-        company_name=company.name,
+        company_id=company.company_code if company else None,
+        company_name=company.name if company else POOL_NAME,
         file_name=safe_file_name(file_name, "dealers"),
         file_format=table.file_format,
         sheet_name=table.sheet_name,

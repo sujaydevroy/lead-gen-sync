@@ -1,4 +1,5 @@
 // Role names (same as dcp.roles on the API) and what each role can open.
+import { FEATURES } from '@/lib/features';
 
 export const SYSTEM_ADMIN = 'System Administrator';
 export const COMPANY_ADMIN = 'Company Administrator';
@@ -19,6 +20,6 @@ export function canOpenPath(user, pathname) {
   const under = (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`);
   if (isSystemAdmin(user)) return SYSTEM_ADMIN_PATHS.some(under);
   if (under('/admin')) return false;
-  if (under('/users')) return isCompanyAdmin(user);
+  if (under('/users')) return FEATURES.companyUserManagement && isCompanyAdmin(user);
   return true;
 }

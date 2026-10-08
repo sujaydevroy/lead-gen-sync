@@ -39,7 +39,7 @@ def assignable_roles(db: Session) -> list[str]:
     return [name for name in COMPANY_ROLES if name in existing]
 
 
-def _role_id(db: Session, name: str) -> int:
+def role_id_for(db: Session, name: str) -> int:
     if name not in COMPANY_ROLES:
         raise ApiError(422, f"Unknown role '{name}'. Choose one of: {', '.join(COMPANY_ROLES)}.")
     role_id = db.scalar(select(Role.id).where(Role.name == name, Role.is_active))
@@ -66,7 +66,7 @@ def create_user(db: Session, company: Company, payload: UserCreate) -> ManagedUs
     auth_service.validate_new_password(payload.password)
     user = User(
         company_id=company.id,
-        role_id=_role_id(db, payload.role),
+        role_id=role_id_for(db, payload.role),
         user_code=next_code(db, User.user_code, "USR", start=2001),
         full_name=payload.name,
         email=str(payload.email),
@@ -87,7 +87,7 @@ def update_user(db: Session, company: Company, actor: User, user_code: str, payl
     if user.id == actor.id and ((payload.role is not None and payload.role != user.role.name) or payload.is_active is False):
         raise ApiError(409, "You cannot change your own role or deactivate your own account.")
     if payload.role is not None and payload.role != user.role.name:
-        user.role_id = _role_id(db, payload.role)
+        user.role_id = role_id_for(db, payload.role)
     deactivated = payload.is_active is False and user.is_active
     if payload.is_active is not None:
         user.is_active = payload.is_active

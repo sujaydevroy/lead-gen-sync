@@ -11,7 +11,17 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.errors import ApiError
 from app.core.roles import SYSTEM_ADMIN
-from app.schemas.admin import AdminCompanyOut, AdminLookups, CompanyCreate, CompanyFields, DealerUploadOut, ManagedUserOut
+from app.schemas.admin import (
+    AdminCompanyOut,
+    AdminLookups,
+    AdminUserUpdate,
+    CompanyCreate,
+    CompanyFields,
+    DealerPoolStats,
+    DealerUploadOut,
+    ManagedUserOut,
+    PasswordSet,
+)
 from app.services import admin_service, dealer_import_service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -66,23 +76,54 @@ def company_users(company_code: str, _: AuthContext = Depends(sysadmin), db: Ses
     return admin_service.company_users(db, company_code)
 
 
+@router.patch("/companies/{company_code}/users/{user_code}", response_model=ManagedUserOut)
+def update_company_user(
+    company_code: str, user_code: str, payload: AdminUserUpdate, _: AuthContext = Depends(sysadmin), db: Session = Depends(get_db)
+):
+    """Edit a user's name, email, job title, phone or role (only the fields sent change)."""
+    return admin_service.update_company_user(db, company_code, user_code, payload)
+
+
+@router.post("/companies/{company_code}/users/{user_code}/unlock", response_model=ManagedUserOut)
+def unlock_company_user(company_code: str, user_code: str, _: AuthContext = Depends(sysadmin), db: Session = Depends(get_db)):
+    return admin_service.unlock_company_user(db, company_code, user_code)
+
+
+@router.post("/companies/{company_code}/users/{user_code}/password", response_model=ManagedUserOut)
+def set_company_user_password(
+    company_code: str, user_code: str, payload: PasswordSet, _: AuthContext = Depends(sysadmin), db: Session = Depends(get_db)
+):
+    """Set a temporary password for the user (they are signed out everywhere)."""
+    return admin_service.set_company_user_password(db, company_code, user_code, payload.password)
+
+
+@router.get("/dealer-pool", response_model=DealerPoolStats)
+def dealer_pool(_: AuthContext = Depends(sysadmin), db: Session = Depends(get_db)):
+    """Size of the platform dealer pool (uploaded dealers not assigned to any client company)."""
+    return DealerPoolStats(dealer_count=dealer_import_service.pool_dealer_count(db))
+
+
 @router.post("/dealer-uploads", response_model=DealerUploadOut, status_code=201)
 def upload_dealers(
     file: UploadFile = File(...),
-    company_id: str = Form(..., alias="companyId"),
+    company_id: str | None = Form(default=None, alias="companyId"),
     auth: AuthContext = Depends(sysadmin),
     db: Session = Depends(get_db),
 ):
-    """Upload an .xlsx / .xls / .csv / .json dealer file into a company.
+    """Upload an .xlsx / .xls / .csv / .json dealer file into the platform dealer pool.
 
-    Rows go straight into dcp.dealers (existing Dealer IDs are updated, others inserted) and its product tables;
-    the response summarises the outcome and lists the rows that were skipped.
+    Rows go straight into dcp.dealers (existing Dealer IDs are updated, others inserted) and its product tables.
+    Without companyId they go into the pool (held by the hidden platform company, never shown to clients);
+    with companyId into that client company's own dealers.
+    The response summarises the outcome and lists the rows that were skipped.
     """
     settings = get_settings()
     content = file.file.read(settings.max_upload_bytes + 1)
     if len(content) > settings.max_upload_bytes:
         raise ApiError(413, f"The file is larger than {settings.max_upload_mb} MB.")
-    return dealer_import_service.import_dealers(db, company_id, content=content, file_name=file.filename or "dealers.xlsx")
+    return dealer_import_service.import_dealers(
+        db, company_id or None, content=content, file_name=file.filename or "dealers.xlsx"
+    )
 
 
 @router.get("/dealer-uploads/template")

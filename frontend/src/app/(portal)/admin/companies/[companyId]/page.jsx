@@ -9,7 +9,6 @@ import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
 import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
@@ -18,7 +17,6 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
-import DriveFolderUploadRoundedIcon from '@mui/icons-material/DriveFolderUploadRounded';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import RestoreRoundedIcon from '@mui/icons-material/RestoreRounded';
 import PageHeader from '@/components/ui/PageHeader';
@@ -27,7 +25,9 @@ import StatCard from '@/components/ui/StatCard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import CompanyFormFields, { EMPTY_COMPANY, companyToForm, formToPayload } from '@/components/admin/CompanyFormFields';
-import UserTable from '@/components/admin/UserTable';
+import CompanyUserCard from '@/components/admin/CompanyUserCard';
+import EditUserDialog from '@/components/admin/EditUserDialog';
+import SetPasswordDialog from '@/components/users/SetPasswordDialog';
 import { useNotify } from '@/components/providers/NotificationProvider';
 import useAsync from '@/hooks/useAsync';
 import adminService from '@/services/adminService';
@@ -40,8 +40,10 @@ export default function CompanyAdminPage() {
   const [company, setCompany] = useState(null);
   const [confirming, setConfirming] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [passwordFor, setPasswordFor] = useState(null);
+  const [busy, setBusy] = useState(false);
   const loaded = useAsync(() => adminService.getCompany(code), [code]);
-  const users = useAsync(() => adminService.getCompanyUsers(code), [code]);
   const { data: lookups } = useAsync(() => adminService.getLookups(), []);
 
   const {
@@ -81,6 +83,21 @@ export default function CompanyAdminPage() {
       notify(error.message, 'error');
     } finally {
       setToggling(false);
+    }
+  };
+
+  // 1:1 demo mapping: the company's one user comes with the company (company.user).
+  const replaceUser = (updated) => setCompany((prev) => ({ ...prev, user: updated }));
+
+  const unlock = async (user) => {
+    setBusy(true);
+    try {
+      replaceUser(await adminService.unlockCompanyUser(code, user.id));
+      notify(`${user.name} was unlocked`, 'success');
+    } catch (error) {
+      notify(error.message, 'error');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -126,15 +143,6 @@ export default function CompanyAdminPage() {
         actions={
           <>
             <Button
-              component={Link}
-              href={`/admin/dealer-uploads?company=${encodeURIComponent(company.id)}`}
-              variant="outlined"
-              startIcon={<DriveFolderUploadRoundedIcon />}
-              disabled={!company.isActive}
-            >
-              Upload dealers
-            </Button>
-            <Button
               variant="outlined"
               color={company.isActive ? 'error' : 'success'}
               startIcon={company.isActive ? <BlockRoundedIcon /> : <RestoreRoundedIcon />}
@@ -149,15 +157,14 @@ export default function CompanyAdminPage() {
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 6, md: 3 }}>
-          <StatCard label="Users" value={formatNumber(company.userCount)} />
-        </Grid>
-        <Grid size={{ xs: 6, md: 3 }}>
           <StatCard label="Dealers" value={formatNumber(company.dealerCount)} />
         </Grid>
       </Grid>
 
       <Stack spacing={3}>
-        <SectionCard title="Company details" subtitle="Shown to the company's users on their Company Details page">
+        <CompanyUserCard user={company.user} busy={busy} onEdit={setEditing} onUnlock={unlock} onSetPassword={setPasswordFor} />
+
+        <SectionCard title="Company details" subtitle="Shown to the user on their Company Details page">
           <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
             <CompanyFormFields register={register} control={control} errors={errors} lookups={lookups} />
             <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', mt: 3 }}>
@@ -175,32 +182,36 @@ export default function CompanyAdminPage() {
             </Stack>
           </Box>
         </SectionCard>
-
-        <SectionCard
-          title="Users"
-          subtitle="Read-only here: the company's own administrators add users and change roles or status"
-          noPadding
-        >
-          {users.error ? (
-            <Typography variant="body2" color="error" sx={{ p: 2.5 }}>
-              Users could not be loaded.
-            </Typography>
-          ) : users.loading && !users.data ? (
-            <Box sx={{ p: 2 }}>
-              <Skeleton height={44} />
-            </Box>
-          ) : (
-            <UserTable users={users.data} />
-          )}
-        </SectionCard>
       </Stack>
+
+      <EditUserDialog
+        user={editing}
+        roles={lookups?.roles || []}
+        onClose={() => setEditing(null)}
+        onSave={(changes) => adminService.updateCompanyUser(code, editing.id, changes)}
+        onSaved={(updated) => {
+          replaceUser(updated);
+          setEditing(null);
+          notify(`${updated.name} was updated`, 'success');
+        }}
+      />
+      <SetPasswordDialog
+        user={passwordFor}
+        onClose={() => setPasswordFor(null)}
+        onSave={(password) => adminService.setCompanyUserPassword(code, passwordFor.id, password)}
+        onSaved={(updated) => {
+          replaceUser(updated);
+          setPasswordFor(null);
+          notify(`Temporary password set for ${updated.name}`, 'success');
+        }}
+      />
 
       <Dialog open={confirming} onClose={() => !toggling && setConfirming(false)}>
         <DialogTitle>Deactivate {company.name}?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Its {formatNumber(company.userCount)} user(s) will be signed out and can no longer sign in. Dealers, messages and
-            sales data are kept, and you can activate the company again at any time.
+            Its user is signed out and can no longer sign in. Dealers, messages and sales data are kept, and you can
+            activate the company again at any time.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
