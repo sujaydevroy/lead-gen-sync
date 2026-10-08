@@ -29,6 +29,8 @@ os.environ["STORAGE_LOCAL_DIR"] = tempfile.mkdtemp(prefix="dcp-test-storage-")
 DEMO_PASSWORD = "Test-Password-2026"
 VIEWER_PASSWORD = "Viewer-Password-2026"
 OTHER_PASSWORD = "Other-Password-2026"
+SYSADMIN_PASSWORD = "Sysadmin-Password-2026"
+SYSADMIN_EMAIL = "root@platform.example"
 
 
 def pytest_collection_modifyitems(config, items):
@@ -93,10 +95,21 @@ def database():
             full_name="Omar Other",
             email="omar@other.example",
         )
-        db.add(other_user)
+        platform = Company(company_code="SYS-PLATFORM", name="Platform Administration", is_platform=True)
+        db.add_all([other_user, platform])
+        db.flush()
+        sysadmin = User(
+            company_id=platform.id,
+            role_id=db.scalar(select(Role.id).where(Role.name == "System Administrator")),
+            user_code="USR-9001",
+            full_name="Sam Sysadmin",
+            email=SYSADMIN_EMAIL,
+        )
+        db.add(sysadmin)
         db.commit()
         auth_service.set_password(db, viewer, VIEWER_PASSWORD)
         auth_service.set_password(db, other_user, OTHER_PASSWORD)
+        auth_service.set_password(db, sysadmin, SYSADMIN_PASSWORD)
     return engine
 
 

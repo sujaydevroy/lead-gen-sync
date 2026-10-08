@@ -14,7 +14,8 @@ INSERT INTO dcp.roles (name, description) VALUES
     ('Company Administrator', 'Full access to company data, users and settings'),
     ('Sales Manager', 'Manages dealers, communication and sales analytics'),
     ('Sales Representative', 'Communicates with assigned dealers'),
-    ('Viewer', 'Read-only access')
+    ('Viewer', 'Read-only access'),
+    ('System Administrator', 'Platform owners: manage all companies and upload dealers')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO dcp.regions (name, sort_order) VALUES

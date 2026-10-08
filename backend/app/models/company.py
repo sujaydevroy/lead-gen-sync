@@ -31,6 +31,7 @@ class Company(AuditMixin, Base):
     tax_id: Mapped[str | None] = mapped_column(String(100))
     employee_count: Mapped[int | None] = mapped_column(Integer)
     founded_year: Mapped[int | None] = mapped_column(SmallInteger)
+    is_platform: Mapped[bool] = mapped_column(Boolean, default=False)
 
     sector: Mapped[Sector | None] = relationship(lazy="joined")
     country: Mapped[Country | None] = relationship(lazy="joined")

@@ -98,6 +98,11 @@ const authService = {
     if (stored) persistSession({ ...stored, user }, stored.remember);
     return user;
   },
+
+  /** POST /users/me/password — change your own password (e.g. a temporary one set by an administrator). */
+  changePassword(currentPassword, newPassword) {
+    return api.post('/users/me/password', { currentPassword, newPassword });
+  },
 };
 
 export default authService;

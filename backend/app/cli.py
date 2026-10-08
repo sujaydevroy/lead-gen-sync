@@ -6,6 +6,7 @@ python -m app.cli seed                                 # runs database/03_seed.s
 python -m app.cli seed-demo-communications             # demo history like the frontend mock (only if none exist)
 python -m app.cli remap-products                       # rebuild product -> sub-sector links
 python -m app.cli backfill-sales-uploads               # fill column/row detail for older sales uploads
+python -m app.cli create-sysadmin you@example.com --name "Your Name"   # system administrator (prompts for password)
 """
 
 from __future__ import annotations
@@ -21,7 +22,8 @@ from sqlalchemy import func, inspect, select, text
 from app.core.config import BACKEND_DIR, PROJECT_ROOT, SCHEMA, get_settings
 from app.core.database import get_engine, get_session_factory, run_sql_script
 from app.core.errors import ApiError
-from app.core.security import now_utc
+from app.core.roles import SYSTEM_ADMIN
+from app.core.security import hash_password, now_utc
 from app.models import (
     Communication,
     CommunicationStatus,
@@ -30,11 +32,13 @@ from app.models import (
     Dealer,
     Product,
     ProductSubSector,
+    Role,
     SubSector,
     User,
 )
 from app.services import auth_service
 from app.services.analytics.sector_matching import product_matches_sub_sector
+from app.services.codes import next_code
 from app.services.communication_service import dealer_party
 
 DEMO_COMMUNICATIONS = [
@@ -241,6 +245,55 @@ def cmd_set_password(email: str) -> int:
     return 0
 
 
+PLATFORM_COMPANY_CODE = "SYS-PLATFORM"
+
+
+def cmd_create_sysadmin(email: str, name: str) -> int:
+    """Create (or promote) a System Administrator: the platform owners who manage all companies."""
+    with get_session_factory()() as db:
+        role = db.scalar(select(Role).where(Role.name == SYSTEM_ADMIN))
+        if role is None:
+            print("The System Administrator role is missing. Run: python -m app.cli setup", file=sys.stderr)
+            return 1
+        platform = db.scalar(select(Company).where(Company.company_code == PLATFORM_COMPANY_CODE))
+        if platform is None:
+            platform = Company(
+                company_code=PLATFORM_COMPANY_CODE, name="Platform Administration", logo_text="PA", is_platform=True
+            )
+            db.add(platform)
+            db.flush()
+        user = auth_service.find_user_by_email(db, email)
+        if user is not None and user.company_id != platform.id:
+            print(f"{email} already belongs to company {user.company.name}; use another email.", file=sys.stderr)
+            return 1
+        password = getpass.getpass("Password for the system administrator: ")
+        if password != getpass.getpass("Repeat password: "):
+            print("Passwords do not match.", file=sys.stderr)
+            return 1
+        try:
+            auth_service.validate_new_password(password)
+        except ApiError as exc:
+            print(exc.detail, file=sys.stderr)
+            return 1
+        if user is None:
+            user = User(
+                company_id=platform.id,
+                role_id=role.id,
+                user_code=next_code(db, User.user_code, "USR", start=2001),
+                full_name=name,
+                email=email.strip(),
+            )
+            db.add(user)
+        user.role_id = role.id
+        user.is_active = True
+        user.password_hash = hash_password(password)
+        user.locked_until = None
+        user.failed_login_count = 0
+        db.commit()
+    print(f"System administrator {email} is ready. Sign in at the portal to manage companies.")
+    return 0
+
+
 def cmd_seed() -> int:
     sql = (PROJECT_ROOT / "database" / "03_seed.sql").read_text(encoding="utf-8")
     with get_engine().begin() as connection:
@@ -414,6 +467,9 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("seed-demo-communications", help="Insert demo communication history")
     sub.add_parser("remap-products", help="Rebuild product -> sub-sector links")
     sub.add_parser("backfill-sales-uploads", help="Fill column/row detail for uploads made before migration 0002")
+    sysadmin = sub.add_parser("create-sysadmin", help="Create a System Administrator (prompts for the password)")
+    sysadmin.add_argument("email")
+    sysadmin.add_argument("--name", default="System Administrator", help="Full name shown in the app")
     args = parser.parse_args(argv)
     try:
         get_settings()
@@ -432,6 +488,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_seed_demo_communications()
     if args.command == "backfill-sales-uploads":
         return cmd_backfill_sales_uploads()
+    if args.command == "create-sysadmin":
+        return cmd_create_sysadmin(args.email, args.name)
     return cmd_remap_products()
 
 

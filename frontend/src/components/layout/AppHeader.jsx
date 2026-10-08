@@ -18,13 +18,18 @@ import Divider from '@mui/material/Divider';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import BrandMark from './BrandMark';
 import ProfileMenu from './ProfileMenu';
-import { NAV_ITEMS, activeNavHref } from './navConfig';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { homePathFor } from '@/lib/roles';
+import { activeNavHref, navItemsFor } from './navConfig';
 
 /** Top application header: brand, company/user dropdown and primary navigation. */
 export default function AppHeader() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const navItems = navItemsFor(user);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const active = activeNavHref(pathname);
+  const matched = activeNavHref(pathname);
+  const active = navItems.some((item) => item.href === matched) ? matched : false;
 
   return (
     <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
@@ -36,7 +41,7 @@ export default function AppHeader() {
         >
           <MenuRoundedIcon />
         </IconButton>
-        <Box component={Link} href="/dealers" sx={{ textDecoration: 'none', color: 'inherit' }} aria-label="Go to dealers">
+        <Box component={Link} href={homePathFor(user)} sx={{ textDecoration: 'none', color: 'inherit' }} aria-label="Go to home page">
           <BrandMark />
         </Box>
         <Box sx={{ flexGrow: 1 }} />
@@ -51,7 +56,7 @@ export default function AppHeader() {
           aria-label="Main navigation"
           sx={{ minHeight: 44, '& .MuiTab-root': { minHeight: 44, py: 0, px: 1.75 } }}
         >
-          {NAV_ITEMS.map(({ label, href, Icon }) => (
+          {navItems.map(({ label, href, Icon }) => (
             <Tab key={href} value={href} label={label} icon={<Icon sx={{ fontSize: 18 }} />} iconPosition="start" component={Link} href={href} />
           ))}
         </Tabs>
@@ -63,7 +68,7 @@ export default function AppHeader() {
         </Box>
         <Divider />
         <List component="nav" aria-label="Main navigation" sx={{ px: 1 }}>
-          {NAV_ITEMS.map(({ label, href, Icon }) => (
+          {navItems.map(({ label, href, Icon }) => (
             <ListItemButton
               key={href}
               component={Link}

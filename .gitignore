@@ -1,18 +1,14 @@
-node_modules/
-.next/
-out/
-.env*.local
+# Repo-wide rules only. App-specific rules: frontend/.gitignore and backend/.gitignore.
+
+# Secrets anywhere in the repo: only the *.example files are tracked
+# (e.g. backend/.env.bak written by setup_env.py must never be committed).
 .env
-# Any other env file (e.g. backend/.env.bak written by setup_env.py) — only the examples are tracked.
 .env.*
 !.env.example
-npm-debug.log*
-.DS_Store
 
-# Backend (Python)
-backend/.venv/
-backend/storage/
+# Python caches (database/*.py scripts as well as the backend)
 __pycache__/
-*.egg-info/
-.pytest_cache/
-.ruff_cache/
+
+# OS / editor files
+.DS_Store
+Thumbs.db

@@ -187,6 +187,7 @@ erDiagram
         varchar_100 tax_id
         int employee_count
         smallint founded_year
+        boolean is_platform
         boolean is_active "audit"
         bigint created_by "audit"
         timestamptz created_on "audit"

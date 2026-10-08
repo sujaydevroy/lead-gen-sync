@@ -23,7 +23,7 @@ import EntityAvatar from '@/components/ui/EntityAvatar';
 import { clearSalesData } from '@/store/salesSlice';
 import { clearFilters } from '@/store/dealerListSlice';
 import { initials } from '@/lib/format';
-import { PROFILE_MENU_ITEMS } from './navConfig';
+import { profileMenuItemsFor } from './navConfig';
 
 /** Company + user area in the header. Clicking it opens the account dropdown. */
 export default function ProfileMenu() {
@@ -63,7 +63,8 @@ export default function ProfileMenu() {
                   {company.name}
                 </Typography>
                 <Typography variant="caption" sx={{ display: 'block', lineHeight: 1.25 }}>
-                  ID {company.id} · {user.country}, {user.region}
+                  ID {company.id}
+                  {user.country ? ` · ${[user.country, user.region].filter(Boolean).join(', ')}` : ''}
                 </Typography>
               </Box>
             </Stack>
@@ -108,11 +109,18 @@ export default function ProfileMenu() {
           </Typography>
           <Stack direction="row" spacing={1} sx={{ mt: 1.25, flexWrap: 'wrap', rowGap: 1 }}>
             <Chip size="small" color="primary" variant="outlined" label={user.role} />
-            <Chip size="small" variant="outlined" icon={<PlaceOutlinedIcon />} label={`${user.country} · ${user.region}`} />
+            {user.country && (
+              <Chip
+                size="small"
+                variant="outlined"
+                icon={<PlaceOutlinedIcon />}
+                label={[user.country, user.region].filter(Boolean).join(' · ')}
+              />
+            )}
           </Stack>
         </Box>
         <Divider />
-        {PROFILE_MENU_ITEMS.map(({ label, href, Icon }) => (
+        {profileMenuItemsFor(user).map(({ label, href, Icon }) => (
           <MenuItem key={href} component={Link} href={href} onClick={() => setAnchor(null)} sx={{ py: 1.1 }}>
             <ListItemIcon>
               <Icon fontSize="small" />

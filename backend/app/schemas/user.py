@@ -46,6 +46,11 @@ class UserUpdate(CamelModel):
         return value or None
 
 
+class PasswordChange(CamelModel):
+    current_password: str = Field(min_length=1, max_length=200)
+    new_password: str = Field(min_length=1, max_length=200)
+
+
 class UserSettingsOut(CamelModel):
     default_page_size: Literal[10, 20, 50] = 20
     apply_filters_instantly: bool = True

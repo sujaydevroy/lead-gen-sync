@@ -40,6 +40,7 @@ python -m app.cli seed             # reference data, sectors, company, John Smit
 python -m app.cli set-password john.smith@abc.com    # prompts; the seeded user has no password
 python -m app.cli seed-demo-communications           # optional demo history
 python -m app.cli backfill-sales-uploads             # fill column/row detail for uploads made before migration 0002
+python -m app.cli create-sysadmin you@example.com --name "Your Name"   # System Administrator (prompts for the password)
 ```
 
 **Updating an existing database:** after pulling new code, run `.venv\Scripts\python -m app.cli setup` again. It applies
@@ -64,7 +65,8 @@ Integration tests **drop and recreate** schema `dcp` in `TEST_DATABASE_URL`. The
 | Area | Endpoints (prefix `/api/v1`) |
 |---|---|
 | Auth | `POST /auth/login` (cookies), `/auth/token` (bearer), `/auth/refresh`, `GET /auth/session`, `POST /auth/logout`, `/auth/forgot-password`, `/auth/reset-password` |
-| Users | `GET/PATCH /users/me`, `GET/PUT /users/me/settings` |
+| Users | `GET/PATCH /users/me`, `POST /users/me/password`, `GET/PUT /users/me/settings`; Company Administrators: `GET/POST /users`, `GET /users/roles`, `PATCH /users/{id}` (role, isActive), `POST /users/{id}/unlock`, `POST /users/{id}/password` |
+| System administration | System Administrators only: `GET /admin/lookups`, `GET/POST /admin/companies`, `GET/PUT/DELETE /admin/companies/{id}`, `POST /admin/companies/{id}/activate`, `GET /admin/companies/{id}/users`, `POST /admin/dealer-uploads` (.xlsx / .xls / .csv / .json; rows saved in `dcp.dealers` + product tables), `GET /admin/dealer-uploads/template` |
 | Dealers | `GET /dealers` (search, 6 filter groups, facets, pagination), `/dealers/search`, `/dealers/recent`, `/dealers/{id}` |
 | Communication | `POST /dealers/{id}/messages` (multipart + attachment), `POST /dealers/{id}/interactions`, `GET /communications`, `/communications/recent`, `/communications/stats`, attachment download |
 | Company & lookups | `GET /companies/me`, `/companies/me/sector`, `/lookups/*`, `/dashboard/stats` |
@@ -72,7 +74,7 @@ Integration tests **drop and recreate** schema `dcp` in `TEST_DATABASE_URL`. The
 
 Security: Argon2id password hashes, 15-minute JWT access cookie, rotating refresh sessions with reuse
 detection, double-submit CSRF header for cookie-authenticated writes, login lockout and rate limiting,
-tenant scoping by company on every query, role check for exchange-rate changes, upload type/size checks,
+tenant scoping by company on every query, role checks for exchange-rate changes, user management and system administration, upload type/size checks,
 and no SQL string building with user input.
 
 The Next.js frontend calls this API through its `/api/v1` rewrite (see the root README). No email provider is
@@ -84,7 +86,7 @@ local disk (`STORAGE_LOCAL_DIR`).
 ```
 app/
   main.py              app factory, middleware, /health
-  cli.py               set-password, seed, seed-demo-communications, remap-products
+  cli.py               set-password, seed, seed-demo-communications, remap-products, create-sysadmin
   core/                config, database, security, errors, rate limiting, email
   models/              SQLAlchemy models (mirror database/02_schema.sql)
   schemas/             Pydantic request/response models (same JSON keys the frontend uses)

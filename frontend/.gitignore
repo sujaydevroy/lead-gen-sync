@@ -1,0 +1,15 @@
+# Next.js frontend
+
+# Dependencies and build output
+node_modules/
+.next/
+out/
+
+# Environment files: only .env.example is tracked
+.env
+.env.*
+.env*.local
+!.env.example
+
+# Logs
+npm-debug.log*

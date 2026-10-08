@@ -16,6 +16,7 @@ import SectionCard from '@/components/ui/SectionCard';
 import InfoGrid from '@/components/ui/InfoGrid';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useNotify } from '@/components/providers/NotificationProvider';
+import ChangePasswordCard from '@/components/users/ChangePasswordCard';
 import authService from '@/services/authService';
 import { initials } from '@/lib/format';
 
@@ -49,11 +50,11 @@ export default function ProfilePage() {
               {user.name}
             </Typography>
             <Typography color="text.secondary">
-              {user.jobTitle} · {company?.name}
+              {[user.jobTitle, company?.name].filter(Boolean).join(' · ')}
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 1.25, flexWrap: 'wrap', rowGap: 1 }}>
               <Chip size="small" color="primary" label={user.role} />
-              <Chip size="small" variant="outlined" label={`${user.country} · ${user.region}`} />
+              {user.country && <Chip size="small" variant="outlined" label={[user.country, user.region].filter(Boolean).join(' · ')} />}
             </Stack>
           </Box>
         </Stack>
@@ -107,19 +108,22 @@ export default function ProfilePage() {
           </SectionCard>
         </Grid>
         <Grid size={{ xs: 12, lg: 5 }}>
-          <SectionCard title="Account">
+          <SectionCard title="Account" sx={{ height: 'auto' }}>
             <InfoGrid
               columns={1}
               items={[
                 { label: 'User ID', value: user.id },
                 { label: 'Email', value: user.email },
                 { label: 'Role', value: user.role },
-                { label: 'Company', value: `${company?.name} (${company?.id})` },
+                { label: 'Company', value: company ? `${company.name} (${company.id})` : '' },
                 { label: 'Country', value: user.country },
                 { label: 'Region', value: user.region },
               ]}
             />
           </SectionCard>
+          <Box sx={{ mt: 3 }}>
+            <ChangePasswordCard />
+          </Box>
         </Grid>
       </Grid>
     </>

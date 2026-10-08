@@ -1,0 +1,16 @@
+# FastAPI backend
+
+# Virtual environment and uploaded files
+.venv/
+storage/
+
+# Python build / tool caches
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Environment files: only .env.example is tracked (setup_env.py writes .env and .env.bak)
+.env
+.env.*
+!.env.example

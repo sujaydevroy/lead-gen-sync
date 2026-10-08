@@ -21,12 +21,13 @@ import MailOutlineRoundedIcon from '@mui/icons-material/MailOutlineRounded';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useAuth } from '@/components/providers/AuthProvider';
 import ForgotPasswordDialog from './ForgotPasswordDialog';
+import { homePathFor } from '@/lib/roles';
 import { EMAIL_PATTERN, safeRedirect } from './validation';
 
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, status, verified } = useAuth();
+  const { login, status, verified, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -41,14 +42,14 @@ export default function LoginForm() {
 
   // Already signed in (session confirmed by the API): skip the form.
   useEffect(() => {
-    if (status === 'authenticated' && verified) router.replace(safeRedirect(searchParams.get('next')));
-  }, [status, verified, router, searchParams]);
+    if (status === 'authenticated' && verified) router.replace(safeRedirect(searchParams.get('next'), homePathFor(user)));
+  }, [status, verified, user, router, searchParams]);
 
   const onSubmit = async (values) => {
     setServerError('');
     try {
-      await login(values);
-      router.replace(safeRedirect(searchParams.get('next')));
+      const session = await login(values);
+      router.replace(safeRedirect(searchParams.get('next'), homePathFor(session.user)));
     } catch (error) {
       setServerError(error.status === 401 ? 'Invalid email or password. Please try again.' : error.message);
     }

@@ -23,6 +23,7 @@ ROLES = [
     ("Sales Manager", "Manages dealers, communication and sales analytics"),
     ("Sales Representative", "Communicates with assigned dealers"),
     ("Viewer", "Read-only access"),
+    ("System Administrator", "Platform owners: manage all companies and upload dealers"),
 ]
 REGIONS = ["North", "South", "East", "West", "Central"]
 # Mirrors frontend/src/lib/countries.js

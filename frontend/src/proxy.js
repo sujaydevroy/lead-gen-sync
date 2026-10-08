@@ -15,6 +15,8 @@ const PROTECTED_PREFIXES = [
   '/company',
   '/profile',
   '/settings',
+  '/users',
+  '/admin',
 ];
 
 export function proxy(request) {
