@@ -1,7 +1,7 @@
 # Dealer Communication Portal — API (Python + PostgreSQL)
 
-FastAPI + SQLAlchemy 2 + psycopg 3 + Alembic. Design: [`docs/backend/BACKEND_PLAN.md`](../docs/backend/BACKEND_PLAN.md) ·
-schema: [`database/02_schema.sql`](../database/02_schema.sql) · ERD: [`docs/backend/ERD.md`](../docs/backend/ERD.md).
+FastAPI + SQLAlchemy 2 + psycopg 3 + Alembic. Design: [`BACKEND_PLAN.md`](../BACKEND_PLAN.md) ·
+schema: [`database/02_schema.sql`](../database/02_schema.sql) · ERD: [`ERD.md`](../ERD.md).
 
 ## Quick start (Windows, from the `backend` folder)
 

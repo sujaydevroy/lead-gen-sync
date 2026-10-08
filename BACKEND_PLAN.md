@@ -19,31 +19,31 @@ Related deliverables:
 
 | File | What it is |
 |---|---|
-| [`database/01_create_database.sql`](../../database/01_create_database.sql) | Optional `CREATE DATABASE` for self-hosted PostgreSQL (skip on Supabase) |
-| [`database/02_schema.sql`](../../database/02_schema.sql) | Full schema: 27 tables, constraints, indexes, `modified_on` triggers |
-| [`database/migrations/`](../../database/migrations/) | Upgrades for existing databases (0002: sales upload master/detail), run by Alembic |
-| [`database/03_seed.sql`](../../database/03_seed.sql) | Reference data + company, user and the 57 dealers (generated) |
-| [`database/generate_seed.py`](../../database/generate_seed.py) | Regenerates the seed from `sector.json` and `dealers.json` |
-| [`database/generate_erd.py`](../../database/generate_erd.py) | Regenerates the ERD from the live schema |
+| [`database/01_create_database.sql`](database/01_create_database.sql) | Optional `CREATE DATABASE` for self-hosted PostgreSQL (skip on Supabase) |
+| [`database/02_schema.sql`](database/02_schema.sql) | Full schema: 27 tables, constraints, indexes, `modified_on` triggers |
+| [`database/migrations/`](database/migrations/) | Upgrades for existing databases (0002: sales upload master/detail), run by Alembic |
+| [`database/03_seed.sql`](database/03_seed.sql) | Reference data + company, user and the 57 dealers (generated) |
+| [`database/generate_seed.py`](database/generate_seed.py) | Regenerates the seed from `sector.json` and `dealers.json` |
+| [`database/generate_erd.py`](database/generate_erd.py) | Regenerates the ERD from the live schema |
 | [`ERD.md`](ERD.md) / [`erd.html`](erd.html) | Entity-relationship diagrams (Mermaid) |
 
 ---
 
 ## 1. What the frontend needs today
 
-The Next.js app already isolates data access in `src/services/*`. Every UI component calls these
+The Next.js app already isolates data access in `frontend/src/services/*`. Every UI component calls these
 methods, which currently return mock data with simulated latency. The backend must provide the same
 operations with the same response shapes, so the switch only touches the service files.
 
 | Frontend service method | Current mock source | Backend responsibility |
 |---|---|---|
-| `authService.login / logout / getSession` | `src/app/api/auth/*` (HMAC cookie, password from `.env.local`) | Real users, Argon2 password hashes, JWT + refresh sessions |
+| `authService.login / logout / getSession` | `frontend/src/app/api/auth/*` (HMAC cookie, password from `.env.local`) | Real users, Argon2 password hashes, JWT + refresh sessions |
 | `authService.requestPasswordReset` | timeout only | Reset tokens + email delivery |
 | `authService.updateProfile` | `localStorage` | `PATCH /users/me` |
 | `dealerService.getDealers` (search, 6 filter groups, facets, pagination) | `dealers.json` + `lib/dealerFiltering.js` | SQL filtering, facet counts, server-side pagination |
 | `dealerService.getDealerById / searchDealers / getRecentDealers / getDealerStats` | `dealers.json` | Dealer reads scoped to the user's company |
 | `dealerService.getCountries / getRegions` | derived from dealers | Lookup endpoints with counts |
-| `companyService.getCompanyDetails / getCompanySectorDefinition` | `src/data/companies.js` + `sector.json` | Company + sector / sub-sectors |
+| `companyService.getCompanyDetails / getCompanySectorDefinition` | `frontend/src/data/companies.js` + `sector.json` | Company + sector / sub-sectors |
 | `communicationService.getCommunicationHistory / getRecentCommunications / getCommunicationStats` | in-memory array | `communications` table |
 | `communicationService.sendMessage` (with attachment) | in-memory push | Persist message + attachment file |
 | `communicationService.logInteraction` (Email / Call buttons) | in-memory push | Persist interaction |
@@ -72,7 +72,7 @@ operations with the same response shapes, so the switch only touches the service
 ## 3. Architecture
 
 ```
-Next.js UI ──► src/services/*.js ──► Next.js rewrite /api/v1/* ──► FastAPI
+Next.js UI ──► frontend/src/services/*.js ──► Next.js rewrite /api/v1/* ──► FastAPI
                                                                     │
                     routers (HTTP, auth, validation) ◄──────────────┘
                               │
@@ -160,13 +160,13 @@ A session `before_flush` hook fills `created_by` / `modified_by` from the reques
 
 ## 4. Database design (summary)
 
-Full DDL: [`database/02_schema.sql`](../../database/02_schema.sql) · Diagram: [`ERD.md`](ERD.md).
+Full DDL: [`database/02_schema.sql`](database/02_schema.sql) · Diagram: [`ERD.md`](ERD.md).
 All objects live in schema **`dcp`**. On Supabase this keeps them out of the auto-generated Data
 API, which only exposes `public` by default.
 
 | Area | Tables | Notes |
 |---|---|---|
-| Reference | `roles`, `countries`, `regions`, `currencies`, `dealer_types`, `dealer_statuses`, `communication_types`, `communication_statuses`, `sectors`, `sub_sectors` | Lookups replace the string constants in `src/types/*.js` |
+| Reference | `roles`, `countries`, `regions`, `currencies`, `dealer_types`, `dealer_statuses`, `communication_types`, `communication_statuses`, `sectors`, `sub_sectors` | Lookups replace the string constants in `frontend/src/types/*.js` |
 | Company & auth | `companies`, `users`, `user_settings`, `user_sessions`, `password_reset_tokens` | `companies.sector_id` drives the Sector / Sub-sector filters |
 | Dealers | `dealers`, `products`, `dealer_products`, `product_sub_sectors` | `product_sub_sectors` stores the product → sub-sector mapping that `lib/sectorMatching.js` computes with keywords today |
 | Communication | `communications`, `communication_attachments` | One table for Email / Message / Call / Meeting, inbound and outbound |
@@ -263,7 +263,7 @@ Validation errors return 422 with field details.
 
 | Method | Path | Replaces |
 |---|---|---|
-| GET | `/companies/me` | `companyService.getCompanyDetails` (same keys as `src/data/companies.js`, `address` nested) |
+| GET | `/companies/me` | `companyService.getCompanyDetails` (same keys as `frontend/src/data/companies.js`, `address` nested) |
 | GET | `/companies/me/sector` | `getCompanySectorDefinition` → `{sector, sub_sectors: [...]}` |
 
 ### Communication
@@ -351,11 +351,11 @@ FRONTEND_ORIGIN=http://localhost:3000
 ## 8. Frontend changes (when the API is ready)
 
 1. Add `rewrites()` in `next.config.mjs`: `/api/v1/:path*` → `${API_ORIGIN}/api/v1/:path*`.
-2. Replace the bodies of `src/services/*.js` with `fetch('/api/v1/...')` calls through one small
+2. Replace the bodies of `frontend/src/services/*.js` with `fetch('/api/v1/...')` calls through one small
    client helper that sends the `X-CSRF-Token` header and retries once via `/auth/refresh` on 401.
    Keep the method names and return shapes.
-3. Delete the mock auth routes (`src/app/api/auth/*`, `src/lib/server/session.js`) and `src/lib/mockApi.js`.
-4. Change `src/proxy.js` to check for the `dcp_access` / `dcp_refresh` cookies instead of verifying the mock HMAC.
+3. Delete the mock auth routes (`frontend/src/app/api/auth/*`, `frontend/src/lib/server/session.js`) and `frontend/src/lib/mockApi.js`.
+4. Change `frontend/src/proxy.js` to check for the `dcp_access` / `dcp_refresh` cookies instead of verifying the mock HMAC.
 5. Communications: refetch after send, instead of using the in-memory `subscribe`.
 6. Settings: load and save `/users/me/settings`; keep "Simulate API errors" as a dev-only toggle.
 7. Sales: the Redux slice stays the in-page workspace; thunks call `/sales/uploads`. Add a "Recent uploads" picker (see open question 2).

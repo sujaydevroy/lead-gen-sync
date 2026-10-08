@@ -404,7 +404,7 @@ def delete_upload(db: Session, company: Company, upload_id: int) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Analytics + forecast (port of src/hooks/useSalesAnalytics.js)
+# Analytics + forecast (port of frontend/src/hooks/useSalesAnalytics.js)
 # ---------------------------------------------------------------------------
 
 

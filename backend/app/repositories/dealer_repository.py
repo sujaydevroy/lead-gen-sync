@@ -1,6 +1,6 @@
 """SQL for the dealer list: search, filters, facet counts and pagination.
 
-Same semantics as src/lib/dealerFiltering.js:
+Same semantics as frontend/src/lib/dealerFiltering.js:
   * filter groups are AND-ed, values inside a group are OR-ed;
   * each facet's counts apply every OTHER active filter group plus the search;
   * sub-sector matching uses dealer_products -> product_sub_sectors (no regex at query time).

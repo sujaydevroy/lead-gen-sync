@@ -1,8 +1,8 @@
 """Generate the ERD (Mermaid) from a database that has database/02_schema.sql applied.
 
 Reads the catalog of schema "dcp" and writes:
-    docs/backend/ERD.md    - Mermaid diagrams (render in GitHub / VS Code Markdown preview)
-    docs/backend/erd.html  - same diagrams, viewable in any browser
+    ERD.md    - Mermaid diagrams (render in GitHub / VS Code Markdown preview)
+    erd.html  - same diagrams, viewable in any browser
 
 Usage (connection string from the environment, never hard-coded):
     set DATABASE_URL=postgresql://user:password@host:5432/dbname      (Windows)
@@ -19,7 +19,7 @@ from pathlib import Path
 import psycopg
 
 ROOT = Path(__file__).resolve().parent.parent
-DOCS = ROOT / "docs" / "backend"
+DOCS = ROOT
 SCHEMA = "dcp"
 COMMON = ["id", "is_active", "created_by", "created_on", "modified_by", "modified_on"]
 
@@ -201,7 +201,7 @@ def main() -> None:
     tables, relations = build(columns, fks, uniques)
     overview, full = diagrams(tables, relations)
     write(overview, full, len(tables), len(relations))
-    print(f"Wrote docs/backend/ERD.md and docs/backend/erd.html ({len(tables)} tables, {len(relations)} relationships)")
+    print(f"Wrote ERD.md and erd.html ({len(tables)} tables, {len(relations)} relationships)")
 
 
 if __name__ == "__main__":

@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     storage_local_dir: Path = BACKEND_DIR / "storage"
     max_upload_mb: int = 10
     max_sales_rows: int = 50_000
-    sample_sales_file: Path = PROJECT_ROOT / "public" / "samples" / "sample_sales.xlsx"
+    sample_sales_file: Path = PROJECT_ROOT / "frontend" / "public" / "samples" / "sample_sales.xlsx"
 
     # Web ---------------------------------------------------------------------
     frontend_origin: str = "http://localhost:3000"

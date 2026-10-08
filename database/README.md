@@ -1,7 +1,7 @@
 # Database scripts
 
 PostgreSQL schema for the Dealer Communication Portal. Background and design decisions:
-[`docs/backend/BACKEND_PLAN.md`](../docs/backend/BACKEND_PLAN.md) · diagram: [`docs/backend/ERD.md`](../docs/backend/ERD.md).
+[`BACKEND_PLAN.md`](../BACKEND_PLAN.md) · diagram: [`ERD.md`](../ERD.md).
 
 | File | Purpose |
 |---|---|
@@ -10,7 +10,7 @@ PostgreSQL schema for the Dealer Communication Portal. Background and design dec
 | `migrations/0002_sales_upload_detail.sql` | Upgrade for databases created before the sales master/detail tables (idempotent; run by Alembic / `python -m app.cli setup`) |
 | `03_seed.sql` | Lookups, sectors/sub-sectors, company, admin user, 57 dealers (**generated**) |
 | `generate_seed.py` | Rebuilds `03_seed.sql` from `sector.json` + `dealers.json` |
-| `generate_erd.py` | Rebuilds `docs/backend/ERD.md` + `erd.html` from a live database (`DATABASE_URL`) |
+| `generate_erd.py` | Rebuilds `ERD.md` + `erd.html` from a live database (`DATABASE_URL`) |
 
 ## Run
 

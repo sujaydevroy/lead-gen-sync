@@ -1,7 +1,7 @@
 """Generate database/03_seed.sql from the data the frontend already uses.
 
 Sources (project root): sector.json, dealers.json. Company, user, currency and FX values
-mirror src/data/companies.js, src/data/users.js and src/lib/fx.js.
+mirror frontend/src/data/companies.js, frontend/src/data/users.js and frontend/src/lib/fx.js.
 
 Usage:
     python database/generate_seed.py
@@ -25,14 +25,14 @@ ROLES = [
     ("Viewer", "Read-only access"),
 ]
 REGIONS = ["North", "South", "East", "West", "Central"]
-# Mirrors src/lib/countries.js
+# Mirrors frontend/src/lib/countries.js
 COUNTRIES = {
     "India": "IN", "United States": "US", "Germany": "DE", "United Kingdom": "GB", "France": "FR",
     "Singapore": "SG", "Australia": "AU", "United Arab Emirates": "AE", "Japan": "JP", "Canada": "CA",
     "Belgium": "BE", "Egypt": "EG", "Indonesia": "ID", "Nepal": "NP", "Bangladesh": "BD", "Turkey": "TR",
     "Vietnam": "VN", "Philippines": "PH", "Russia": "RU", "Sri Lanka": "LK",
 }
-# Mirrors src/lib/fx.js (USD value of 1 unit; indicative reference values)
+# Mirrors frontend/src/lib/fx.js (USD value of 1 unit; indicative reference values)
 CURRENCIES = {
     "USD": ("US Dollar", 1), "EUR": ("Euro", 1.08), "GBP": ("Pound Sterling", 1.27),
     "INR": ("Indian Rupee", 0.012), "AED": ("UAE Dirham", 0.2723), "SGD": ("Singapore Dollar", 0.74),
@@ -44,7 +44,7 @@ DEALER_STATUSES = ["Active", "Inactive", "Pending"]
 COMMUNICATION_TYPES = ["Email", "Message", "Call", "Meeting"]
 COMMUNICATION_STATUSES = ["Sent", "Delivered", "Read", "Received", "Completed", "Initiated", "Scheduled", "Failed"]
 
-# Mirrors src/lib/sectorMatching.js (product text -> Electrical & Electrical Equipment sub-sectors)
+# Mirrors frontend/src/lib/sectorMatching.js (product text -> Electrical & Electrical Equipment sub-sectors)
 SUB_SECTOR_KEYWORDS = {
     "Electrical Switches": ["switch", "switches"],
     "Switchgear": ["switchgear", "ring main unit", "rmu", "breakers & switches"],
@@ -181,7 +181,7 @@ def main() -> None:
     w("ON CONFLICT DO NOTHING;")
     w("")
 
-    w("-- Company (src/data/companies.js) --------------------------------------------")
+    w("-- Company (frontend/src/data/companies.js) --------------------------------------------")
     w("INSERT INTO dcp.companies (company_code, name, logo_text, industry, sector_id, website, email, phone,")
     w("    address_line1, city, state, postal_code, country_id, region_id, registration_number, tax_id,")
     w("    employee_count, founded_year)")
@@ -194,7 +194,7 @@ def main() -> None:
     w("ON CONFLICT DO NOTHING;")
     w("")
 
-    w("-- User (src/data/users.js). password_hash stays NULL: set it with the backend CLI. --")
+    w("-- User (frontend/src/data/users.js). password_hash stays NULL: set it with the backend CLI. --")
     w("INSERT INTO dcp.users (company_id, role_id, user_code, full_name, email, job_title, phone, country_id, region_id)")
     w("SELECT co.id, ro.id, 'USR-2001', 'John Smith', 'john.smith@abc.com', 'Head of Channel Sales', '+91 98110 45512', c.id, r.id")
     w("FROM dcp.companies co, dcp.roles ro, dcp.countries c, dcp.regions r")

@@ -1,4 +1,4 @@
-"""Port of src/lib/salesAnalytics.js. Pure functions over sales record dicts.
+"""Port of frontend/src/lib/salesAnalytics.js. Pure functions over sales record dicts.
 
 Records use the frontend's keys (customerName, country, period, product, amount, currency, ...).
 Filtered rows get an extra "value" key: the amount expressed in the reporting currency.

@@ -19,7 +19,7 @@ from app.services.analytics.sales_forecast import create_normal_sampler, forecas
 from app.services.analytics.sales_parsing import parse_sales_rows, read_xlsx
 
 SAMPLE = Path(__file__).resolve().parents[3] / "sample_sales.xlsx"
-# Indicative defaults from src/lib/fx.js
+# Indicative defaults from frontend/src/lib/fx.js
 RATES = {"USD": 1, "EUR": 1.08, "GBP": 1.27, "INR": 0.012, "AED": 0.2723, "SGD": 0.74, "AUD": 0.66, "CAD": 0.73, "JPY": 0.0067}
 
 
@@ -33,7 +33,7 @@ def monthly_for(records, **filters):
 
 
 def test_prng_matches_javascript_sequence():
-    # Output of the JS createNormalSampler for the same seed (node, src/lib/salesForecast.js).
+    # Output of the JS createNormalSampler for the same seed (node, frontend/src/lib/salesForecast.js).
     expected = [
         -0.5407329117391175,
         -0.6182381921452209,

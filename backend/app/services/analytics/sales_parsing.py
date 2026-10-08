@@ -1,4 +1,4 @@
-"""Port of src/lib/salesParsing.js + the reading part of src/services/salesService.js.
+"""Port of frontend/src/lib/salesParsing.js + the reading part of frontend/src/services/salesService.js.
 
 Turns the first sheet of an .xlsx workbook into normalised sales records using exactly the same
 column aliases, validation rules and warning messages as the frontend.

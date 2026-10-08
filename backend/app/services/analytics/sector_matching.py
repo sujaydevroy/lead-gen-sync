@@ -1,4 +1,4 @@
-"""Port of src/lib/sectorMatching.js: map free-text product lines onto sub-sectors.
+"""Port of frontend/src/lib/sectorMatching.js: map free-text product lines onto sub-sectors.
 
 A product matches a sub-sector when it equals the sub-sector name (case-insensitive) or contains
 one of its keywords as a whole word / phrase. Used to maintain dcp.product_sub_sectors.

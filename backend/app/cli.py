@@ -38,7 +38,7 @@ from app.services.analytics.sector_matching import product_matches_sub_sector
 from app.services.communication_service import dealer_party
 
 DEMO_COMMUNICATIONS = [
-    # dealer, type, direction, subject, hours ago, status, body  (mirrors src/data/communications.js)
+    # dealer, type, direction, subject, hours ago, status, body  (mirrors frontend/src/data/communications.js)
     (
         "DLR-1006",
         "Email",

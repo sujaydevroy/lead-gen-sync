@@ -1,4 +1,4 @@
-"""Currency conversion with USD-based rates (port of src/lib/fx.js)."""
+"""Currency conversion with USD-based rates (port of frontend/src/lib/fx.js)."""
 
 from __future__ import annotations
 

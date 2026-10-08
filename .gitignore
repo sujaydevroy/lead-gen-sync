@@ -3,6 +3,9 @@ node_modules/
 out/
 .env*.local
 .env
+# Any other env file (e.g. backend/.env.bak written by setup_env.py) — only the examples are tracked.
+.env.*
+!.env.example
 npm-debug.log*
 .DS_Store
 

@@ -1,4 +1,4 @@
-"""Dealer list behaviour must match the frontend's mock (src/lib/dealerFiltering.js) on the same data."""
+"""Dealer list behaviour must match the frontend's mock (frontend/src/lib/dealerFiltering.js) on the same data."""
 
 from __future__ import annotations
 

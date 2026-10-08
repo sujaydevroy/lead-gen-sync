@@ -1,4 +1,4 @@
-"""Port of src/lib/salesForecast.js — transparent, dependency-free sales forecasting.
+"""Port of frontend/src/lib/salesForecast.js — transparent, dependency-free sales forecasting.
 
 Model selection (continuous monthly series of length n):
   n >= 24 (and >= 18 months with sales) -> Holt-Winters additive, 12-month seasonality

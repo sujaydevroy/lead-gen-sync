@@ -712,7 +712,7 @@ FROM (VALUES
 JOIN dcp.currencies c ON c.code = v.code
 ON CONFLICT DO NOTHING;
 
--- Company (src/data/companies.js) --------------------------------------------
+-- Company (frontend/src/data/companies.js) --------------------------------------------
 INSERT INTO dcp.companies (company_code, name, logo_text, industry, sector_id, website, email, phone,
     address_line1, city, state, postal_code, country_id, region_id, registration_number, tax_id,
     employee_count, founded_year)
@@ -724,7 +724,7 @@ FROM dcp.sectors s, dcp.countries c, dcp.regions r
 WHERE s.name = 'Electrical & Electrical Equipment' AND c.name = 'India' AND r.name = 'North'
 ON CONFLICT DO NOTHING;
 
--- User (src/data/users.js). password_hash stays NULL: set it with the backend CLI. --
+-- User (frontend/src/data/users.js). password_hash stays NULL: set it with the backend CLI. --
 INSERT INTO dcp.users (company_id, role_id, user_code, full_name, email, job_title, phone, country_id, region_id)
 SELECT co.id, ro.id, 'USR-2001', 'John Smith', 'john.smith@abc.com', 'Head of Channel Sales', '+91 98110 45512', c.id, r.id
 FROM dcp.companies co, dcp.roles ro, dcp.countries c, dcp.regions r

@@ -1,4 +1,4 @@
-# Build from the repository root (the API reads database/*.sql and public/samples/):
+# Build from the repository root (the API reads database/*.sql and frontend/public/samples/):
 #   docker build -f backend/Dockerfile -t dealer-portal-api .
 #   docker run --env-file backend/.env -p 8000:8000 dealer-portal-api
 FROM python:3.13-slim
@@ -9,13 +9,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /srv
 COPY database ./database
-COPY public/samples ./public/samples
+COPY frontend/public/samples ./frontend/public/samples
 COPY backend/pyproject.toml backend/alembic.ini ./backend/
 COPY backend/alembic ./backend/alembic
 COPY backend/app ./backend/app
 
 WORKDIR /srv/backend
-# Editable install keeps app/ in place, so paths to ../database and ../public resolve.
+# Editable install keeps app/ in place, so paths to ../database and ../frontend/public resolve.
 RUN pip install --no-cache-dir -e . \
     && useradd --create-home --uid 10001 appuser \
     && mkdir -p storage && chown appuser storage

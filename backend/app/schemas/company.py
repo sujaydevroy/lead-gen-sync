@@ -15,7 +15,7 @@ class CompanyAddress(CamelModel):
 
 
 class CompanyOut(CamelModel):
-    """Same shape as src/data/companies.js."""
+    """Same shape as frontend/src/data/companies.js."""
 
     id: str
     name: str

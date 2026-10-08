@@ -9,7 +9,7 @@ from app.schemas.common import CamelModel
 
 
 class UserOut(CamelModel):
-    """Same shape as src/data/users.js."""
+    """Same shape as frontend/src/data/users.js."""
 
     id: str
     name: str

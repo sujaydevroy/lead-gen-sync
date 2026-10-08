@@ -47,7 +47,7 @@ def upload(file: UploadFile = File(...), auth: AuthContext = Depends(get_auth), 
 
 @router.post("/uploads/sample", response_model=SalesUploadResult, status_code=201)
 def upload_sample(auth: AuthContext = Depends(get_auth), db: Session = Depends(get_db)):
-    """Load the bundled demo workbook (public/samples/sample_sales.xlsx)."""
+    """Load the bundled demo workbook (frontend/public/samples/sample_sales.xlsx)."""
     return sales_service.upload_sample(db, auth.company, auth.user)
 
 
