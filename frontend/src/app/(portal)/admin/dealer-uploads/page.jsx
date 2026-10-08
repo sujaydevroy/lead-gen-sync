@@ -20,8 +20,8 @@ import adminService, { DEALER_FILE_EXTENSIONS } from '@/services/adminService';
 import { formatNumber } from '@/lib/format';
 
 /**
- * Dealer files go into the platform dealer pool: dealers that belong to no client company yet and will be
- * matched to clients (by industry, sector and products) later.
+ * Dealer files go into the dealer directory (dcp.dealers): dealer data only, owned by no company. Clients are
+ * matched to dealers through the products they deal in.
  */
 export default function DealerUploadPage() {
   const notify = useNotify();
@@ -30,7 +30,7 @@ export default function DealerUploadPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
-  const pool = useAsync(() => adminService.getDealerPool(), []);
+  const directory = useAsync(() => adminService.getDealerDirectory(), []);
 
   const upload = async (file) => {
     if (!file) return;
@@ -40,8 +40,8 @@ export default function DealerUploadPage() {
     try {
       const outcome = await adminService.uploadDealers(file);
       setResult(outcome);
-      notify(`${outcome.inserted} new and ${outcome.updated} updated dealer(s) saved to the dealer pool`, outcome.failed ? 'warning' : 'success');
-      pool.reload();
+      notify(`${outcome.inserted} new and ${outcome.updated} updated dealer(s) saved to the dealer directory`, outcome.failed ? 'warning' : 'success');
+      directory.reload();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -53,11 +53,11 @@ export default function DealerUploadPage() {
     <>
       <PageHeader
         title="Dealer Upload"
-        subtitle="Add or update dealers in the platform dealer pool from an Excel (.xlsx, .xls), CSV or JSON file"
+        subtitle="Add or update dealers in the dealer directory from an Excel (.xlsx, .xls), CSV or JSON file"
         meta={
           <Chip
             icon={<StorefrontRoundedIcon />}
-            label={pool.data ? `${formatNumber(pool.data.dealerCount)} dealers in the pool` : 'Dealer pool'}
+            label={directory.data ? `${formatNumber(directory.data.dealerCount)} dealers in the directory` : 'Dealer directory'}
             variant="outlined"
           />
         }
@@ -71,7 +71,7 @@ export default function DealerUploadPage() {
       <Stack spacing={3}>
         <SectionCard
           title="Upload a dealer file"
-          subtitle="Dealers are saved to the shared pool, not to a client company; they are matched to clients by industry and products later"
+          subtitle="Dealers belong to no company; clients are matched to them through the products they deal in"
         >
           <Stack spacing={2.5}>
             <Box
@@ -122,7 +122,7 @@ export default function DealerUploadPage() {
                     .xlsx, .xls, .csv or .json (a list like dealers.json), max 10 MB. Columns: Dealer ID, Dealer Name, Company
                     Name, Dealer Type, Status, Contact Person, Email, Phone, Website, Registration No, Full Address, City, State,
                     Postal Code, Country, Region, Sector, Products, Last Transaction Date / Amount, Currency, Source URL,
-                    Verification Date. New dealers need Dealer Name, Dealer Type and Country; a Dealer ID already in the pool
+                    Verification Date. New dealers need Dealer Name, Dealer Type and Country; a Dealer ID that already exists
                     updates that dealer, an empty Dealer ID gets a new DLR code.
                   </Typography>
                   <Button variant="contained" startIcon={<CloudUploadOutlinedIcon />} onClick={() => input.current?.click()}>
@@ -136,7 +136,7 @@ export default function DealerUploadPage() {
         </SectionCard>
 
         {result && (
-          <SectionCard title={`Result: ${result.fileName}`} subtitle="Saved to the platform dealer pool">
+          <SectionCard title={`Result: ${result.fileName}`} subtitle="Saved to the dealer directory">
             <DealerUploadSummary upload={result} />
           </SectionCard>
         )}

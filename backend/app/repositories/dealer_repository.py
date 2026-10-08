@@ -4,6 +4,10 @@ Same semantics as frontend/src/lib/dealerFiltering.js:
   * filter groups are AND-ed, values inside a group are OR-ed;
   * each facet's counts apply every OTHER active filter group plus the search;
   * sub-sector matching uses dealer_products -> product_sub_sectors (no regex at query time).
+
+dcp.dealers is one global directory: a dealer belongs to no company. Which dealers a client sees is decided
+by `visible_scope` only (today: every active dealer). Matching a client's industry to the products it deals
+in, and those products to dealers through dcp.dealer_products, will narrow that scope later.
 """
 
 from __future__ import annotations
@@ -12,6 +16,7 @@ from sqlalchemy import ColumnElement, and_, distinct, exists, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models import (
+    Company,
     Country,
     Dealer,
     DealerProduct,
@@ -25,6 +30,11 @@ from app.models import (
 from app.schemas.dealer import DealerFilters
 
 FILTER_GROUPS = ("countries", "regions", "statuses", "types", "sectors", "sub_sectors")
+
+
+def visible_scope(company: Company) -> list[ColumnElement[bool]]:
+    """Dealers this client company may see. Not company-specific yet: the whole active directory."""
+    return [Dealer.is_active]
 
 
 def escape_like(term: str) -> str:
@@ -71,10 +81,10 @@ def _group_condition(group: str, values: list[str], sub_sector_ids: list[int]) -
 
 
 class DealerQuery:
-    """Builds WHERE clauses for one request (company scope + search + filter groups)."""
+    """Builds WHERE clauses for one request (visible dealers + search + filter groups)."""
 
-    def __init__(self, company_id: int, search: str, filters: DealerFilters, sub_sector_ids: list[int]):
-        self.base = [Dealer.company_id == company_id, Dealer.is_active]
+    def __init__(self, scope: list[ColumnElement[bool]], search: str, filters: DealerFilters, sub_sector_ids: list[int]):
+        self.base = list(scope)
         searched = search_condition(search)
         if searched is not None:
             self.base.append(searched)
@@ -130,52 +140,40 @@ def sub_sector_counts(db: Session, conditions, sub_sector_ids: list[int]) -> dic
     return {sub_id: total for sub_id, total in db.execute(stmt)}
 
 
-def country_region_pairs(db: Session, company_id: int) -> list[tuple[str, str, int]]:
+def country_region_pairs(db: Session, scope: list[ColumnElement[bool]]) -> list[tuple[str, str, int]]:
     stmt = (
         select(Country.name, Region.name, Region.sort_order)
         .select_from(Dealer)
         .join(Country, Country.id == Dealer.country_id)
         .join(Region, Region.id == Dealer.region_id)
-        .where(Dealer.company_id == company_id, Dealer.is_active)
+        .where(*scope)
         .distinct()
     )
     return [tuple(row) for row in db.execute(stmt)]
 
 
-def company_countries(db: Session, company_id: int) -> list[str]:
+def dealer_countries(db: Session, scope: list[ColumnElement[bool]]) -> list[str]:
     stmt = (
         select(Country.name)
         .select_from(Dealer)
         .join(Country, Country.id == Dealer.country_id)
-        .where(Dealer.company_id == company_id, Dealer.is_active)
+        .where(*scope)
         .distinct()
         .order_by(Country.name)
     )
     return list(db.scalars(stmt))
 
 
-def get_by_code(db: Session, company_id: int, dealer_code: str) -> Dealer | None:
-    return db.scalar(
-        select(Dealer).where(
-            Dealer.company_id == company_id,
-            func.lower(Dealer.dealer_code) == dealer_code.strip().lower(),
-            Dealer.is_active,
-        )
-    )
+def get_by_code(db: Session, scope: list[ColumnElement[bool]], dealer_code: str) -> Dealer | None:
+    return db.scalar(select(Dealer).where(*scope, func.lower(Dealer.dealer_code) == dealer_code.strip().lower()))
 
 
-def recent(db: Session, company_id: int, limit: int) -> list[Dealer]:
-    stmt = (
-        select(Dealer)
-        .where(Dealer.company_id == company_id, Dealer.is_active)
-        .order_by(Dealer.created_on.desc(), Dealer.id.desc())
-        .limit(limit)
-    )
+def recent(db: Session, scope: list[ColumnElement[bool]], limit: int) -> list[Dealer]:
+    stmt = select(Dealer).where(*scope).order_by(Dealer.created_on.desc(), Dealer.id.desc()).limit(limit)
     return list(db.scalars(stmt).unique())
 
 
-def stats(db: Session, company_id: int) -> dict[str, int]:
-    scope = [Dealer.company_id == company_id, Dealer.is_active]
+def stats(db: Session, scope: list[ColumnElement[bool]]) -> dict[str, int]:
     active = (
         db.scalar(
             select(func.count(Dealer.id))

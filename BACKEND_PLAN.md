@@ -174,8 +174,9 @@ API, which only exposes `public` by default.
 
 Key decisions:
 
-- **Dealers belong to a company** (`dealers.company_id`, unique `(company_id, dealer_code)`).
-  `dealer_code` is the public id (`DLR-1001`) used in URLs. See open question 1.
+- **Dealers belong to no company** (migration 0005 dropped `dealers.company_id`): one global directory, unique
+  `dealer_code`, the public id (`DLR-1001`) used in URLs. Clients will be matched to dealers through the products
+  they deal in (`dealer_products`); today every client sees every active dealer (`visible_scope`).
 - **"Not Available" becomes `NULL`** in the database. The API converts `NULL` back to the
   string `"Not Available"` for fields where the UI expects it, until the UI handles nulls itself.
 - **Sub-sector filtering** joins `dealer_products → product_sub_sectors` instead of running regex
@@ -183,7 +184,7 @@ Key decisions:
   `lib/sectorMatching.js`) recomputes the mapping.
 - **Exchange rates:** `company_id IS NULL` rows are global defaults; company rows override them.
   Partial unique indexes enforce one rate per currency per date per scope.
-- **Indexes** cover the filter columns (`company_id` + country/region/status/type/sector), dealer
+- **Indexes** cover the filter columns (country/region/status/type/sector), dealer
   name sorting, communication timelines and sales periods. Add `pg_trgm` GIN indexes for
   substring search once the dealer volume needs them.
 
@@ -238,7 +239,7 @@ Validation errors return 422 with field details.
 
 **Dealer list algorithm** (port of `lib/dealerFiltering.js`, must keep the same semantics):
 
-1. Base query: `dealers WHERE company_id = :company AND is_active`.
+1. Base query: `dealers WHERE is_active` (`visible_scope(company)`; product matching will narrow it later).
 2. Search: `ILIKE '%term%'` on `dealer_name`, `dealer_code`, `legal_name`, `city`, `contact_person`, `email`.
 3. Filters: AND across groups, OR (`= ANY(:list)`) within a group. Sub-sector:
    `EXISTS (dealer_products ⨝ product_sub_sectors WHERE sub_sector_id = ANY(:ids))`.

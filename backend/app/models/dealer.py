@@ -24,7 +24,6 @@ class ProductSubSector(AuditMixin, Base):
 
 class Dealer(AuditMixin, Base):
     __tablename__ = "dealers"
-    company_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("dcp.companies.id"))
     dealer_code: Mapped[str] = mapped_column(String(30))
     dealer_name: Mapped[str] = mapped_column(String(200))
     legal_name: Mapped[str | None] = mapped_column(String(250))

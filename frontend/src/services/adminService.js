@@ -19,7 +19,7 @@ const adminService = {
     return api.get('/admin/lookups');
   },
 
-  /** Customer companies with userCount / dealerCount / isActive (the platform company is excluded). */
+  /** Customer companies with userCount / isActive (the platform company is excluded). */
   listCompanies({ search = '', includeInactive = true } = {}) {
     return api.get('/admin/companies', { search, includeInactive });
   },
@@ -66,13 +66,13 @@ const adminService = {
     });
   },
 
-  /** { dealerCount } — dealers in the platform pool (not assigned to any client company). */
-  getDealerPool() {
-    return api.get('/admin/dealer-pool');
+  /** { dealerCount } — active dealers in the dealer directory (dealers belong to no company). */
+  getDealerDirectory() {
+    return api.get('/admin/dealer-directory');
   },
 
   /**
-   * Upload a dealer file into the platform dealer pool. The rows are saved in dcp.dealers; the response is the
+   * Upload a dealer file into the dealer directory. The rows are saved in dcp.dealers; the response is the
    * outcome only: { inserted, updated, failed, issues: [{ row, message }], columnMapping, ignoredColumns, ... }
    */
   async uploadDealers(file) {

@@ -9,14 +9,18 @@ def test_requires_authentication(client):
 
 
 def test_tenant_isolation(client):
+    """Dealers are one shared directory; communications and sales stay private to each company."""
     login(client, "omar@other.example", OTHER_PASSWORD)
-    assert client.get("/api/v1/dealers").json()["total"] == 0
-    assert client.get("/api/v1/dealers/DLR-1001").status_code == 404
+    assert client.get("/api/v1/dealers").json()["total"] == 57
+    assert client.get("/api/v1/dealers/DLR-1001").status_code == 200
     assert client.get("/api/v1/communications").json()["total"] == 0
     assert client.get("/api/v1/sales/uploads").json() == []
     assert client.get("/api/v1/sales/analytics").json()["hasData"] is False
-    blocked = client.post("/api/v1/dealers/DLR-1001/messages", data={"subject": "Hello", "message": "Cross-tenant attempt"})
-    assert blocked.status_code == 404
+    # Messaging a shared dealer is recorded for the sender's company only, never shown to ABC Corporation.
+    sent = client.post("/api/v1/dealers/DLR-1001/messages", data={"subject": "Hello", "message": "From Other Industries"})
+    assert sent.status_code == 201 and client.get("/api/v1/communications").json()["total"] == 1
+    login(client)
+    assert all(c["subject"] != "Hello" for c in client.get("/api/v1/communications").json()["items"])
 
 
 def test_profile_and_settings(auth_client):

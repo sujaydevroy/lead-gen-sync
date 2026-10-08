@@ -14,8 +14,9 @@ from sqlalchemy.orm import Session
 from app.core.errors import ApiError, not_found
 from app.core.roles import COMPANY_ADMIN
 from app.core.security import hash_password
-from app.models import Company, Country, Currency, Dealer, DealerStatus, DealerType, Region, Role, Sector, User
+from app.models import Company, Country, Currency, DealerStatus, DealerType, Region, Role, Sector, User
 from app.schemas.admin import AdminCompanyOut, AdminLookups, AdminUserUpdate, CompanyCreate, CompanyFields, ManagedUserOut
+from app.schemas.company import CompanyOptions, CompanyOut
 from app.services import auth_service, company_user_service
 from app.services.codes import next_code
 from app.services.company_service import company_to_out
@@ -60,12 +61,11 @@ def primary_user(db: Session, company: Company) -> User:
     return user
 
 
-def _to_out(company: Company, users: int, dealers: int, user: User | None) -> AdminCompanyOut:
+def _to_out(company: Company, users: int, user: User | None) -> AdminCompanyOut:
     return AdminCompanyOut(
         **company_to_out(company).model_dump(),
         is_active=company.is_active,
         user_count=users,
-        dealer_count=dealers,
         created_on=company.created_on,
         user=user_to_managed_out(user) if user else None,
     )
@@ -76,7 +76,6 @@ def _one_out(db: Session, company: Company) -> AdminCompanyOut:
     return _to_out(
         company,
         _counts(db, User, ids).get(company.id, 0),
-        _counts(db, Dealer, ids).get(company.id, 0),
         primary_users(db, ids).get(company.id),
     )
 
@@ -91,8 +90,8 @@ def list_companies(db: Session, *, search: str = "", include_inactive: bool = Tr
         stmt = stmt.where(Company.is_active)
     companies = list(db.scalars(stmt))
     ids = [c.id for c in companies]
-    users, dealers, primaries = _counts(db, User, ids), _counts(db, Dealer, ids), primary_users(db, ids)
-    return [_to_out(c, users.get(c.id, 0), dealers.get(c.id, 0), primaries.get(c.id)) for c in companies]
+    users, primaries = _counts(db, User, ids), primary_users(db, ids)
+    return [_to_out(c, users.get(c.id, 0), primaries.get(c.id)) for c in companies]
 
 
 def get_company(db: Session, company_code: str) -> Company:
@@ -168,6 +167,22 @@ def update_company(db: Session, company_code: str, payload: CompanyFields) -> Ad
     db.commit()
     db.refresh(company)
     return _one_out(db, company)
+
+
+def update_own_company(db: Session, company: Company, payload: CompanyFields) -> CompanyOut:
+    """A company's own administrator edits its profile (same fields and rules as the system administrator's edit)."""
+    _apply_fields(db, company, payload)
+    db.commit()
+    db.refresh(company)
+    return company_to_out(company)
+
+
+def company_options(db: Session) -> CompanyOptions:
+    return CompanyOptions(
+        countries=_names(db, Country, Country.name),
+        regions=_names(db, Region, Region.sort_order),
+        sectors=_names(db, Sector, Sector.name),
+    )
 
 
 def set_company_active(db: Session, company_code: str, active: bool) -> AdminCompanyOut:

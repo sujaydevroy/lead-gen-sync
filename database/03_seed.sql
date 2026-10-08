@@ -825,11 +825,11 @@ JOIN dcp.sub_sectors ss ON ss.sector_id = s.id AND ss.name = v.sub_sector
 ON CONFLICT DO NOTHING;
 
 -- Dealers (57) from dealers.json ------------------------------------------------
-INSERT INTO dcp.dealers (company_id, dealer_code, dealer_name, legal_name, dealer_type_id, dealer_status_id,
+INSERT INTO dcp.dealers (dealer_code, dealer_name, legal_name, dealer_type_id, dealer_status_id,
     contact_person, email, phone, website, registration_no, full_address, city, state, postal_code,
     country_id, region_id, sector_id, last_transaction_date, last_transaction_amount,
     last_transaction_currency_id, source_url, verification_date, is_demo, created_on)
-SELECT co.id, v.dealer_code, v.dealer_name, v.legal_name, dt.id, ds.id,
+SELECT v.dealer_code, v.dealer_name, v.legal_name, dt.id, ds.id,
     v.contact_person, v.email, v.phone, v.website, v.registration_no, v.full_address, v.city, v.state, v.postal_code,
     cn.id, rg.id, se.id, v.last_transaction_date::date, v.last_transaction_amount::numeric,
     cu.id, v.source_url, v.verification_date::date, v.is_demo::boolean, v.created_on::timestamptz
@@ -894,7 +894,6 @@ FROM (VALUES
 ) AS v(dealer_code, dealer_name, legal_name, dealer_type, status, contact_person, email, phone, website,
        registration_no, full_address, city, state, postal_code, country, region, sector,
        last_transaction_date, last_transaction_amount, currency, source_url, verification_date, is_demo, created_on)
-JOIN dcp.companies co ON co.company_code = 'CMP-10045'
 JOIN dcp.dealer_types dt ON dt.name = v.dealer_type
 JOIN dcp.dealer_statuses ds ON ds.name = v.status
 JOIN dcp.countries cn ON cn.name = v.country
@@ -1164,8 +1163,7 @@ FROM (VALUES
     ('DLR-1057', 'Street Lighting', 4),
     ('DLR-1057', 'Earthing Products', 5)
 ) AS v(dealer_code, product, sort_order)
-JOIN dcp.companies co ON co.company_code = 'CMP-10045'
-JOIN dcp.dealers d ON d.company_id = co.id AND d.dealer_code = v.dealer_code
+JOIN dcp.dealers d ON d.dealer_code = v.dealer_code
 JOIN dcp.products p ON lower(p.name) = lower(v.product)
 ON CONFLICT DO NOTHING;
 

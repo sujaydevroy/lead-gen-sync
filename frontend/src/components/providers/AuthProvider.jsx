@@ -81,6 +81,18 @@ export function AuthProvider({ children }) {
 
   const updateUser = useCallback((user) => setState((prev) => ({ ...prev, user })), []);
 
+  // After the company profile was edited: show the new details and reload the sector (it may have changed).
+  const updateCompany = useCallback(
+    (company) => {
+      setCompanyState((prev) => ({ ...prev, company }));
+      companyService
+        .getCompanySectorDefinition()
+        .then((sectorDefinition) => setCompanyState((prev) => ({ ...prev, company, sectorDefinition })))
+        .catch(() => {});
+    },
+    [],
+  );
+
   const value = useMemo(() => {
     const current = companyState.companyId === companyId;
     return {
@@ -90,8 +102,9 @@ export function AuthProvider({ children }) {
       login,
       logout,
       updateUser,
+      updateCompany,
     };
-  }, [state, companyState, companyId, login, logout, updateUser]);
+  }, [state, companyState, companyId, login, logout, updateUser, updateCompany]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

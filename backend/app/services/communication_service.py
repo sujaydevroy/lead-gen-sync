@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass
 from pathlib import PurePath
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -117,10 +117,7 @@ def list_communications(
                 ),
                 Communication.dealer_id.in_(
                     select(Dealer.id).where(
-                        and_(
-                            Dealer.company_id == company.id,
-                            or_(Dealer.dealer_name.ilike(pattern, escape="\\"), Dealer.dealer_code.ilike(pattern, escape="\\")),
-                        )
+                        or_(Dealer.dealer_name.ilike(pattern, escape="\\"), Dealer.dealer_code.ilike(pattern, escape="\\"))
                     )
                 ),
             )

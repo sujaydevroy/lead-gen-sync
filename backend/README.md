@@ -66,10 +66,10 @@ Integration tests **drop and recreate** schema `dcp` in `TEST_DATABASE_URL`. The
 |---|---|
 | Auth | `POST /auth/login` (cookies), `/auth/token` (bearer), `/auth/refresh`, `GET /auth/session`, `POST /auth/logout`, `/auth/forgot-password`, `/auth/reset-password` |
 | Users | `GET/PATCH /users/me`, `POST /users/me/password`, `GET/PUT /users/me/settings`; Company Administrators: `GET/POST /users`, `GET /users/roles`, `PATCH /users/{id}` (role, isActive), `POST /users/{id}/unlock`, `POST /users/{id}/password` |
-| System administration | System Administrators only: `GET /admin/lookups`, `GET/POST /admin/companies`, `GET/PUT/DELETE /admin/companies/{id}`, `POST /admin/companies/{id}/activate`, `GET /admin/companies/{id}/users`, `PATCH /admin/companies/{id}/users/{userId}` (+ `/unlock`, `/password`), `GET /admin/dealer-pool`, `POST /admin/dealer-uploads` (.xlsx / .xls / .csv / .json into the dealer pool — `dcp.dealers` owned by the hidden platform company — + product tables), `GET /admin/dealer-uploads/template` |
+| System administration | System Administrators only: `GET /admin/lookups`, `GET/POST /admin/companies`, `GET/PUT/DELETE /admin/companies/{id}`, `POST /admin/companies/{id}/activate`, `GET /admin/companies/{id}/users`, `PATCH /admin/companies/{id}/users/{userId}` (+ `/unlock`, `/password`), `GET /admin/dealer-directory`, `POST /admin/dealer-uploads` (.xlsx / .xls / .csv / .json into the dealer directory — `dcp.dealers`, owned by no company — + product tables), `GET /admin/dealer-uploads/template` |
 | Dealers | `GET /dealers` (search, 6 filter groups, facets, pagination), `/dealers/search`, `/dealers/recent`, `/dealers/{id}` |
 | Communication | `POST /dealers/{id}/messages` (multipart + attachment), `POST /dealers/{id}/interactions`, `GET /communications`, `/communications/recent`, `/communications/stats`, attachment download |
-| Company & lookups | `GET /companies/me`, `/companies/me/sector`, `/lookups/*`, `/dashboard/stats` |
+| Company & lookups | `GET /companies/me`, `PUT /companies/me` (Company Administrators), `/companies/me/options`, `/companies/me/sector`, `/lookups/*`, `/dashboard/stats` |
 | Sales | `POST /sales/uploads`, `/sales/uploads/sample`, `GET/DELETE /sales/uploads/{id}`, `GET /sales/uploads`, `GET /sales/uploads/{id}/columns`, `/sales/uploads/{id}/rows`, `/sales/uploads/{id}/file` (original workbook), `GET/PUT/DELETE /sales/exchange-rates`, `GET /sales/analytics`, `GET /sales/forecast` |
 
 Security: Argon2id password hashes, 15-minute JWT access cookie, rotating refresh sessions with reuse

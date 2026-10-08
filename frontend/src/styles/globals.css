@@ -12,9 +12,3 @@ body {
 a {
   color: inherit;
 }
-
-/* Recharts: no focus outline box around the whole chart surface */
-.recharts-wrapper:focus,
-.recharts-surface:focus {
-  outline: none;
-}

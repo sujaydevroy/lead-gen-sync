@@ -1,10 +1,7 @@
 """Dealer file upload (system administrators): .xlsx / .xls / .csv / .json rows -> dcp.dealers.
 
-By default rows go into the platform DEALER POOL: dealers that belong to no client yet and will later be matched
-to clients by industry / products. No table changes: the pool is mapped onto the hidden platform company
-(dcp.companies.is_platform, the company system administrators belong to), so pool dealers are ordinary
-dcp.dealers rows with company_id = that company and are never visible to clients. Passing a company code
-instead loads the rows into that client company's own dealers.
+dcp.dealers is one global DEALER DIRECTORY: a dealer belongs to no company. Clients are matched to dealers through
+the products they deal in (dcp.dealer_products), never through ownership. Dealer ID is unique system-wide.
 
 Rows are saved directly in dcp.dealers and its product tables (dcp.dealer_products, dcp.products,
 dcp.product_sub_sectors); nothing else is stored about the file. created_by / modified_by on each dealer
@@ -13,7 +10,7 @@ record which system administrator added or changed it.
 * Headers are matched loosely ("Dealer Name", "dealer_name", "DEALER NAME" are the same); the keys of
   dealers.json work too, and a .json file shaped like dealers.json uploads as it is. Unknown columns are
   ignored and reported.
-* A row whose Dealer ID already exists in the company UPDATES that dealer (and reactivates it); other rows
+* A row whose Dealer ID already exists UPDATES that dealer (and reactivates it); other rows
   are INSERTED. Rows without a Dealer ID always become new dealers with the next free DLR-xxxx code.
 * On update only the columns present in the file change; an empty cell clears an optional value but keeps
   the required ones (name, type, status, country).
@@ -34,7 +31,6 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import ApiError
 from app.models import (
-    Company,
     Country,
     Currency,
     Dealer,
@@ -48,7 +44,6 @@ from app.models import (
     SubSector,
 )
 from app.schemas.admin import DealerUploadIssue, DealerUploadOut
-from app.services.admin_service import get_company
 from app.services.analytics.sector_matching import product_matches_sub_sector
 from app.services.codes import highest_number
 from app.services.storage_service import safe_file_name
@@ -338,29 +333,12 @@ def _save_products(db: Session, wanted: list[tuple[Dealer, list[str]]]) -> None:
                 link.is_active = False
 
 
-POOL_NAME = "Dealer pool"
+def directory_dealer_count(db: Session) -> int:
+    return db.scalar(select(func.count(Dealer.id)).where(Dealer.is_active)) or 0
 
 
-def pool_company(db: Session) -> Company:
-    """The platform company that holds the dealer pool (created by `python -m app.cli create-sysadmin`)."""
-    company = db.scalar(select(Company).where(Company.is_platform).order_by(Company.id).limit(1))
-    if company is None:
-        raise ApiError(409, "The platform company is missing. Run: python -m app.cli create-sysadmin <email>")
-    return company
-
-
-def pool_dealer_count(db: Session) -> int:
-    company = pool_company(db)
-    return db.scalar(select(func.count(Dealer.id)).where(Dealer.company_id == company.id, Dealer.is_active)) or 0
-
-
-def import_dealers(db: Session, company_code: str | None = None, *, content: bytes, file_name: str) -> DealerUploadOut:
-    """Upsert the file's dealers into the dealer pool (company_code None) or into one client company."""
-    company = get_company(db, company_code) if company_code else None
-    if company is not None and not company.is_active:
-        raise ApiError(409, f"{company.name} is inactive. Activate the company before uploading dealers.")
-    company_id = company.id if company else pool_company(db).id
-    scope = Dealer.company_id == company_id
+def import_dealers(db: Session, *, content: bytes, file_name: str) -> DealerUploadOut:
+    """Upsert the file's dealers into the dealer directory (matched by Dealer ID across all dealers)."""
     table = read_table(content, file_name)
     mapping, ignored = map_columns(table.headers)
     if "dealer_code" not in mapping and "dealer_name" not in mapping:
@@ -370,7 +348,7 @@ def import_dealers(db: Session, company_code: str | None = None, *, content: byt
             "(Dealer ID, Dealer Name, Dealer Type, Status, Country, ...).",
         )
     lookups = _Lookups.load(db)
-    existing = {d.dealer_code.upper(): d for d in db.scalars(select(Dealer).where(scope))}
+    existing = {d.dealer_code.upper(): d for d in db.scalars(select(Dealer))}
     next_number = max(highest_number(existing, "DLR") + 1, 1001)
     seen: set[str] = set()
     issues: list[DealerUploadIssue] = []
@@ -394,7 +372,7 @@ def import_dealers(db: Session, company_code: str | None = None, *, content: byt
                         next_number += 1
                     code = f"DLR-{next_number}"
                     next_number += 1
-                dealer = Dealer(company_id=company_id, dealer_code=code, is_demo=False)
+                dealer = Dealer(dealer_code=code, is_demo=False)
                 dealer.dealer_status_id = lookups.statuses.get("active")
                 created = values.get("created_at")  # dealers.json "created_at"; used for new dealers only
                 if created:
@@ -418,8 +396,6 @@ def import_dealers(db: Session, company_code: str | None = None, *, content: byt
     _save_products(db, product_updates)
     db.commit()
     return DealerUploadOut(
-        company_id=company.company_code if company else None,
-        company_name=company.name if company else POOL_NAME,
         file_name=safe_file_name(file_name, "dealers"),
         file_format=table.file_format,
         sheet_name=table.sheet_name,

@@ -1,11 +1,10 @@
 'use client';
 
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LabelList } from 'recharts';
+import { useMemo } from 'react';
 import { chartColors } from '@/lib/theme';
 import { formatCurrency, formatNumber } from '@/lib/format';
-import ChartTooltip from './ChartTooltip';
-
-const truncate = (text, max) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+import EChart from './EChart';
+import { baseOption, shadowPointer, tooltipHtml, valueAxis } from './chartOptions';
 
 /**
  * Horizontal ranked bar chart (single series, sorted high → low).
@@ -14,57 +13,52 @@ const truncate = (text, max) => (text.length > max ? `${text.slice(0, max - 1)}�
  */
 export default function RankedBarChart({ data, currency, labelWidth = 150, nameLabel = 'Item' }) {
   const height = Math.max(160, data.length * 36 + 40);
-  const maxChars = Math.floor(labelWidth / 7);
 
-  return (
-    <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 72, bottom: 4, left: 4 }} barCategoryGap={8}>
-        <CartesianGrid horizontal={false} stroke={chartColors.grid} />
-        <XAxis
-          type="number"
-          tickFormatter={(v) => formatNumber(v, { compact: true })}
-          tick={{ fill: chartColors.axis, fontSize: 12 }}
-          axisLine={false}
-          tickLine={false}
-        />
-        <YAxis
-          type="category"
-          dataKey="name"
-          width={labelWidth}
-          tick={{ fill: chartColors.text, fontSize: 12 }}
-          tickFormatter={(v) => truncate(String(v), maxChars)}
-          axisLine={false}
-          tickLine={false}
-          interval={0}
-        />
-        <Tooltip
-          cursor={{ fill: 'rgba(31,95,214,0.06)' }}
-          content={({ active, payload }) =>
-            active && payload?.length ? (
-              <ChartTooltip
-                title={`${nameLabel}: ${payload[0].payload.name}`}
-                rows={[
-                  { label: 'Sales', value: formatCurrency(payload[0].payload.value, currency) },
-                  ...(payload[0].payload.share !== undefined
-                    ? [{ label: 'Share of total', value: `${payload[0].payload.share.toFixed(1)}%` }]
-                    : []),
-                  ...(payload[0].payload.transactions !== undefined
-                    ? [{ label: 'Transactions', value: formatNumber(payload[0].payload.transactions) }]
-                    : []),
-                ]}
-              />
-            ) : null
-          }
-        />
-        <Bar dataKey="value" fill={chartColors.series1} radius={[0, 4, 4, 0]} maxBarSize={22} isAnimationActive={false}>
-          <LabelList
-            dataKey="share"
-            position="right"
-            formatter={(v) => (v === undefined || v === null ? '' : `${Number(v).toFixed(1)}%`)}
-            style={{ fill: chartColors.axis, fontSize: 12 }}
-          />
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+  const option = useMemo(
+    () => ({
+      ...baseOption({
+        axisPointer: shadowPointer,
+        formatter: (params) => {
+          const row = data[params[0].dataIndex];
+          return tooltipHtml(`${nameLabel}: ${row.name}`, [
+            { label: 'Sales', value: formatCurrency(row.value, currency) },
+            ...(row.share !== undefined ? [{ label: 'Share of total', value: `${row.share.toFixed(1)}%` }] : []),
+            ...(row.transactions !== undefined ? [{ label: 'Transactions', value: formatNumber(row.transactions) }] : []),
+          ]);
+        },
+      }),
+      grid: { top: 4, right: 72, bottom: 4, left: 4, containLabel: true },
+      xAxis: valueAxis,
+      yAxis: {
+        type: 'category',
+        inverse: true, // first (largest) item on top
+        data: data.map((d) => String(d.name)),
+        axisLabel: { color: chartColors.text, fontSize: 12, width: labelWidth - 8, overflow: 'truncate', interval: 0 },
+        axisLine: { show: false },
+        axisTick: { show: false },
+      },
+      series: [
+        {
+          type: 'bar',
+          data: data.map((d) => d.value),
+          itemStyle: { color: chartColors.series1, borderRadius: [0, 4, 4, 0] },
+          barMaxWidth: 22,
+          barCategoryGap: 8,
+          label: {
+            show: true,
+            position: 'right',
+            color: chartColors.axis,
+            fontSize: 12,
+            formatter: ({ dataIndex }) => {
+              const share = data[dataIndex].share;
+              return share === undefined || share === null ? '' : `${Number(share).toFixed(1)}%`;
+            },
+          },
+        },
+      ],
+    }),
+    [data, currency, labelWidth, nameLabel],
   );
+
+  return <EChart option={option} height={height} ariaLabel={`${nameLabel} sales ranking in ${currency}`} />;
 }

@@ -34,7 +34,7 @@ export default function DealerUploadSummary({ upload }) {
       </Grid>
 
       {upload.failed === 0 ? (
-        <Alert severity="success">Every row was saved to {upload.companyName}.</Alert>
+        <Alert severity="success">Every row was saved to the dealer directory.</Alert>
       ) : (
         <Alert severity={upload.inserted + upload.updated ? 'warning' : 'error'}>
           {formatNumber(upload.inserted + upload.updated)} row(s) were saved. {formatNumber(upload.failed)} row(s) were skipped —

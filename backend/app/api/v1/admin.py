@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -17,7 +17,7 @@ from app.schemas.admin import (
     AdminUserUpdate,
     CompanyCreate,
     CompanyFields,
-    DealerPoolStats,
+    DealerDirectoryStats,
     DealerUploadOut,
     ManagedUserOut,
     PasswordSet,
@@ -97,33 +97,29 @@ def set_company_user_password(
     return admin_service.set_company_user_password(db, company_code, user_code, payload.password)
 
 
-@router.get("/dealer-pool", response_model=DealerPoolStats)
-def dealer_pool(_: AuthContext = Depends(sysadmin), db: Session = Depends(get_db)):
-    """Size of the platform dealer pool (uploaded dealers not assigned to any client company)."""
-    return DealerPoolStats(dealer_count=dealer_import_service.pool_dealer_count(db))
+@router.get("/dealer-directory", response_model=DealerDirectoryStats)
+def dealer_directory(_: AuthContext = Depends(sysadmin), db: Session = Depends(get_db)):
+    """Size of the dealer directory (dcp.dealers: active dealers, shared by all client companies)."""
+    return DealerDirectoryStats(dealer_count=dealer_import_service.directory_dealer_count(db))
 
 
 @router.post("/dealer-uploads", response_model=DealerUploadOut, status_code=201)
 def upload_dealers(
     file: UploadFile = File(...),
-    company_id: str | None = Form(default=None, alias="companyId"),
     auth: AuthContext = Depends(sysadmin),
     db: Session = Depends(get_db),
 ):
-    """Upload an .xlsx / .xls / .csv / .json dealer file into the platform dealer pool.
+    """Upload an .xlsx / .xls / .csv / .json dealer file into the dealer directory.
 
     Rows go straight into dcp.dealers (existing Dealer IDs are updated, others inserted) and its product tables.
-    Without companyId they go into the pool (held by the hidden platform company, never shown to clients);
-    with companyId into that client company's own dealers.
+    Dealers belong to no company; clients are matched to them through the products they deal in.
     The response summarises the outcome and lists the rows that were skipped.
     """
     settings = get_settings()
     content = file.file.read(settings.max_upload_bytes + 1)
     if len(content) > settings.max_upload_bytes:
         raise ApiError(413, f"The file is larger than {settings.max_upload_mb} MB.")
-    return dealer_import_service.import_dealers(
-        db, company_id or None, content=content, file_name=file.filename or "dealers.xlsx"
-    )
+    return dealer_import_service.import_dealers(db, content=content, file_name=file.filename or "dealers.xlsx")
 
 
 @router.get("/dealer-uploads/template")

@@ -12,3 +12,8 @@ __pycache__/
 # OS / editor files
 .DS_Store
 Thumbs.db
+
+# Database dumps (full Supabase backups hold secrets, sessions and password hashes): keep them local only
+database/backup/
+*.backup
+*.dump

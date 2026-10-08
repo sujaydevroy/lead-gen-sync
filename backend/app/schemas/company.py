@@ -33,6 +33,14 @@ class CompanyOut(CamelModel):
     founded: str | None = None
 
 
+class CompanyOptions(CamelModel):
+    """Allowed values for the company profile form."""
+
+    sectors: list[str]
+    countries: list[str]
+    regions: list[str]
+
+
 class SectorDefinition(BaseModel):
     """Same shape as an entry of sector.json."""
 

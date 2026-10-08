@@ -7,6 +7,16 @@ const companyService = {
     return api.get('/companies/me');
   },
 
+  /** Replace the company profile (Company Administrators only). values = CompanyFormFields payload. */
+  updateCompanyDetails(values) {
+    return api.put('/companies/me', values);
+  },
+
+  /** { sectors, countries, regions } for the company profile form. */
+  getCompanyOptions() {
+    return api.get('/companies/me/options');
+  },
+
   /**
    * The company's sector and its sub-sectors ({ sector, sub_sectors }), or null when the company
    * has no sector configured.

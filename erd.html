@@ -31,7 +31,6 @@
     sectors |o--o{ companies : &quot;sector_id&quot;
     dealers ||--o{ dealer_products : &quot;dealer_id&quot;
     products ||--o{ dealer_products : &quot;product_id&quot;
-    companies ||--o{ dealers : &quot;company_id&quot;
     countries ||--o{ dealers : &quot;country_id&quot;
     dealer_statuses ||--o{ dealers : &quot;dealer_status_id&quot;
     dealer_types ||--o{ dealers : &quot;dealer_type_id&quot;
@@ -249,8 +248,7 @@
     }
     dealers {
         bigint id PK
-        bigint company_id FK
-        varchar_30 dealer_code
+        varchar_30 dealer_code UK
         varchar_200 dealer_name
         varchar_250 legal_name
         bigint dealer_type_id FK
@@ -458,7 +456,6 @@
     sectors |o--o{ companies : &quot;sector_id&quot;
     dealers ||--o{ dealer_products : &quot;dealer_id&quot;
     products ||--o{ dealer_products : &quot;product_id&quot;
-    companies ||--o{ dealers : &quot;company_id&quot;
     countries ||--o{ dealers : &quot;country_id&quot;
     dealer_statuses ||--o{ dealers : &quot;dealer_status_id&quot;
     dealer_types ||--o{ dealers : &quot;dealer_type_id&quot;

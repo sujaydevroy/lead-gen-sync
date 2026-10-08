@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
@@ -7,23 +8,41 @@ import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Skeleton from '@mui/material/Skeleton';
+import Button from '@mui/material/Button';
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import PageHeader from '@/components/ui/PageHeader';
 import SectionCard from '@/components/ui/SectionCard';
 import InfoGrid from '@/components/ui/InfoGrid';
 import EntityAvatar from '@/components/ui/EntityAvatar';
 import EmptyState from '@/components/ui/EmptyState';
 import CountryLabel from '@/components/ui/CountryLabel';
+import EditCompanyDialog from '@/components/company/EditCompanyDialog';
+import { useNotify } from '@/components/providers/NotificationProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import companyService from '@/services/companyService';
 import useAsync from '@/hooks/useAsync';
 import useCompanySector from '@/hooks/useCompanySector';
 import { formatNumber } from '@/lib/format';
+import { isCompanyAdmin } from '@/lib/roles';
 
 export default function CompanyPage() {
-  const { user } = useAuth();
-  const { data: company, loading, error, reload } = useAsync(() => companyService.getCompanyDetails(), [user.companyId]);
+  const { user, updateCompany } = useAuth();
+  const notify = useNotify();
+  const loaded = useAsync(() => companyService.getCompanyDetails(), [user.companyId]);
+  const { loading, error, reload } = loaded;
+  const [saved, setSaved] = useState(null); // details returned by the last edit
+  const [editing, setEditing] = useState(false);
+  const company = saved ?? loaded.data;
   const sectorDefinition = useCompanySector();
+  const canEdit = isCompanyAdmin(user);
+
+  const onSaved = (updated) => {
+    setSaved(updated);
+    updateCompany(updated);
+    setEditing(false);
+    notify('Company details saved', 'success');
+  };
 
   if (error) {
     return (
@@ -47,7 +66,17 @@ export default function CompanyPage() {
 
   return (
     <>
-      <PageHeader title="Company Details" subtitle="Information about your organisation used across the portal" />
+      <PageHeader
+        title="Company Details"
+        subtitle="Information about your organisation used across the portal"
+        actions={
+          canEdit && (
+            <Button variant="contained" startIcon={<EditOutlinedIcon />} onClick={() => setEditing(true)}>
+              Edit company
+            </Button>
+          )
+        }
+      />
 
       <Card sx={{ mb: 3 }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} sx={{ p: 3, alignItems: { sm: 'center' } }}>
@@ -125,6 +154,8 @@ export default function CompanyPage() {
           </Stack>
         </Grid>
       </Grid>
+
+      {canEdit && <EditCompanyDialog open={editing} company={company} onClose={() => setEditing(false)} onSaved={onSaved} />}
     </>
   );
 }

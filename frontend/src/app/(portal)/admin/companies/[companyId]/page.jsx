@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -21,7 +20,6 @@ import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import RestoreRoundedIcon from '@mui/icons-material/RestoreRounded';
 import PageHeader from '@/components/ui/PageHeader';
 import SectionCard from '@/components/ui/SectionCard';
-import StatCard from '@/components/ui/StatCard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import CompanyFormFields, { EMPTY_COMPANY, companyToForm, formToPayload } from '@/components/admin/CompanyFormFields';
@@ -31,7 +29,7 @@ import SetPasswordDialog from '@/components/users/SetPasswordDialog';
 import { useNotify } from '@/components/providers/NotificationProvider';
 import useAsync from '@/hooks/useAsync';
 import adminService from '@/services/adminService';
-import { formatDate, formatNumber } from '@/lib/format';
+import { formatDate } from '@/lib/format';
 
 export default function CompanyAdminPage() {
   const { companyId } = useParams();
@@ -155,12 +153,6 @@ export default function CompanyAdminPage() {
         }
       />
 
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 6, md: 3 }}>
-          <StatCard label="Dealers" value={formatNumber(company.dealerCount)} />
-        </Grid>
-      </Grid>
-
       <Stack spacing={3}>
         <CompanyUserCard user={company.user} busy={busy} onEdit={setEditing} onUnlock={unlock} onSetPassword={setPasswordFor} />
 
@@ -210,7 +202,7 @@ export default function CompanyAdminPage() {
         <DialogTitle>Deactivate {company.name}?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Its user is signed out and can no longer sign in. Dealers, messages and sales data are kept, and you can
+            Its user is signed out and can no longer sign in. Messages and sales data are kept, and you can
             activate the company again at any time.
           </DialogContentText>
         </DialogContent>

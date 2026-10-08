@@ -31,6 +31,7 @@ from app.models import (
     SalesUploadRow,
     User,
 )
+from app.repositories.dealer_repository import visible_scope
 from app.schemas.common import Page
 from app.schemas.sales import (
     FileMetadata,
@@ -128,12 +129,10 @@ def upload_sales_file(
         db.add(SalesUploadIssue(sales_upload_id=upload.id, row_number=warning["row"], message=warning["message"][:1000]))
 
     # Resolve names to reference rows where possible (raw text is always kept).
-    dealers = _name_map(db, select(Dealer.id, Dealer.dealer_name).where(Dealer.company_id == company.id, Dealer.is_active))
+    dealers = _name_map(db, select(Dealer.id, Dealer.dealer_name).where(*visible_scope(company)))
     dealers |= {
         k: v
-        for k, v in _name_map(
-            db, select(Dealer.id, Dealer.legal_name).where(Dealer.company_id == company.id, Dealer.is_active)
-        ).items()
+        for k, v in _name_map(db, select(Dealer.id, Dealer.legal_name).where(*visible_scope(company))).items()
         if k not in dealers
     }
     countries = _name_map(db, select(Country.id, Country.name))

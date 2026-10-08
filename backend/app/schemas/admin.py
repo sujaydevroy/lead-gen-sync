@@ -103,7 +103,6 @@ class ManagedUserOut(CamelModel):
 class AdminCompanyOut(CompanyOut):
     is_active: bool
     user_count: int
-    dealer_count: int
     created_on: datetime
     user: ManagedUserOut | None = None  # the company's one user (1:1 demo mapping: its first user)
 
@@ -146,8 +145,8 @@ class PasswordSet(CamelModel):
 # --- Dealer uploads (system administrators) ----------------------------------------------------
 
 
-class DealerPoolStats(CamelModel):
-    dealer_count: int
+class DealerDirectoryStats(CamelModel):
+    dealer_count: int  # active dealers in dcp.dealers (one global directory, not owned by any company)
 
 
 class DealerUploadIssue(CamelModel):
@@ -158,8 +157,6 @@ class DealerUploadIssue(CamelModel):
 class DealerUploadOut(CamelModel):
     """Outcome of one upload (returned only; the rows themselves are saved in dcp.dealers)."""
 
-    company_id: str | None = None  # None = the platform dealer pool (held by the platform company)
-    company_name: str
     file_name: str
     file_format: str
     sheet_name: str | None = None

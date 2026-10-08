@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import AuthContext, get_auth
 from app.core.database import get_db
 from app.models import CommunicationType, Country, Dealer, DealerStatus, DealerType, Region
+from app.repositories.dealer_repository import visible_scope
 from app.schemas.common import NamedCount
 
 router = APIRouter(prefix="/lookups", tags=["lookups"])
@@ -18,7 +19,7 @@ def countries(auth: AuthContext = Depends(get_auth), db: Session = Depends(get_d
     rows = db.execute(
         select(Country.name, func.count(Dealer.id))
         .join(Dealer, Dealer.country_id == Country.id)
-        .where(Dealer.company_id == auth.company.id, Dealer.is_active)
+        .where(*visible_scope(auth.company))
         .group_by(Country.name)
         .order_by(Country.name)
     )
@@ -31,7 +32,7 @@ def regions(country: list[str] = Query(default=[]), auth: AuthContext = Depends(
     stmt = (
         select(Region.name, func.count(Dealer.id))
         .join(Dealer, Dealer.region_id == Region.id)
-        .where(Dealer.company_id == auth.company.id, Dealer.is_active)
+        .where(*visible_scope(auth.company))
         .group_by(Region.name, Region.sort_order)
         .order_by(Region.sort_order)
     )

@@ -315,7 +315,7 @@ def cmd_seed_demo_communications() -> int:
             return 0
         types = {t.name: t.id for t in db.scalars(select(CommunicationType))}
         statuses = {s.name: s.id for s in db.scalars(select(CommunicationStatus))}
-        dealers = {d.dealer_code: d for d in db.scalars(select(Dealer).where(Dealer.company_id == company.id))}
+        dealers = {d.dealer_code: d for d in db.scalars(select(Dealer))}
         now = now_utc()
         added = 0
         for code, kind, direction, subject, hours, status, body in DEMO_COMMUNICATIONS:

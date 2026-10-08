@@ -67,7 +67,8 @@ def list_dealers(
     page_size = page_size if page_size in PAGE_SIZES else 20
     sub_sectors = company_sub_sectors(db, company)
     sub_sector_ids = repo.resolve_sub_sector_ids(db, company.sector_id, filters.sub_sectors)
-    query = repo.DealerQuery(company.id, search, filters, sub_sector_ids)
+    scope = repo.visible_scope(company)
+    query = repo.DealerQuery(scope, search, filters, sub_sector_ids)
 
     total = repo.count(db, query.where())
     total_pages = max(1, math.ceil(total / page_size))
@@ -80,17 +81,17 @@ def list_dealers(
         page=page,
         page_size=page_size,
         total_pages=total_pages,
-        facets=_facets(db, company, query, filters, sub_sectors),
-        total_dealers=repo.count(db, [Dealer.company_id == company.id, Dealer.is_active]),
+        facets=_facets(db, company, scope, query, filters, sub_sectors),
+        total_dealers=repo.count(db, scope),
     )
 
 
-def _facets(db: Session, company: Company, query: repo.DealerQuery, filters: DealerFilters, sub_sectors) -> DealerFacets:
+def _facets(db: Session, company: Company, scope, query: repo.DealerQuery, filters: DealerFilters, sub_sectors) -> DealerFacets:
     regions_by_country: dict[str, list[tuple[int, str]]] = {}
-    for country, region, sort_order in repo.country_region_pairs(db, company.id):
+    for country, region, sort_order in repo.country_region_pairs(db, scope):
         regions_by_country.setdefault(country, []).append((sort_order, region))
     ordered_regions = {c: [r for _, r in sorted(v)] for c, v in sorted(regions_by_country.items())}
-    countries = repo.company_countries(db, company.id)
+    countries = repo.dealer_countries(db, scope)
 
     country_counts = repo.counts_by(db, Country.name, Country, Country.id == Dealer.country_id, query.where("countries"))
     region_counts = repo.counts_by(db, Region.name, Region, Region.id == Dealer.region_id, query.where("regions"))
@@ -126,20 +127,20 @@ def _facets(db: Session, company: Company, query: repo.DealerQuery, filters: Dea
 
 
 def get_dealer(db: Session, company: Company, dealer_code: str) -> Dealer:
-    dealer = repo.get_by_code(db, company.id, dealer_code)
+    dealer = repo.get_by_code(db, repo.visible_scope(company), dealer_code)
     if dealer is None:
         raise not_found(f"Dealer {dealer_code}")
     return dealer
 
 
 def search_dealers(db: Session, company: Company, term: str, limit: int) -> list[DealerOut]:
-    query = repo.DealerQuery(company.id, term, DealerFilters(), [])
+    query = repo.DealerQuery(repo.visible_scope(company), term, DealerFilters(), [])
     return [dealer_to_out(d) for d in repo.page(db, query.where(), 0, limit)]
 
 
 def recent_dealers(db: Session, company: Company, limit: int) -> list[DealerOut]:
-    return [dealer_to_out(d) for d in repo.recent(db, company.id, limit)]
+    return [dealer_to_out(d) for d in repo.recent(db, repo.visible_scope(company), limit)]
 
 
 def dealer_stats(db: Session, company: Company) -> DealerStats:
-    return DealerStats(**repo.stats(db, company.id))
+    return DealerStats(**repo.stats(db, repo.visible_scope(company)))

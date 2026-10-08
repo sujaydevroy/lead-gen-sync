@@ -1,58 +1,56 @@
 'use client';
 
-import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { useMemo } from 'react';
 import { chartColors } from '@/lib/theme';
 import { formatCurrency, formatNumber, formatPeriod, formatPeriodShort } from '@/lib/format';
-import ChartTooltip from './ChartTooltip';
+import EChart from './EChart';
+import { baseOption, linePointer, shadowPointer, tooltipHtml, valueAxis } from './chartOptions';
 
 /** Monthly sales totals as bars or a line. data = [{ period: 'YYYY-MM', value, transactions }] */
 export default function MonthlySalesChart({ data, currency, type = 'bar', height = 300 }) {
-  return (
-    <ResponsiveContainer width="100%" height={height}>
-      <ComposedChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 4 }}>
-        <CartesianGrid vertical={false} stroke={chartColors.grid} />
-        <XAxis
-          dataKey="period"
-          tickFormatter={formatPeriodShort}
-          tick={{ fill: chartColors.axis, fontSize: 12 }}
-          axisLine={{ stroke: chartColors.grid }}
-          tickLine={false}
-          minTickGap={12}
-        />
-        <YAxis
-          tickFormatter={(v) => formatNumber(v, { compact: true })}
-          tick={{ fill: chartColors.axis, fontSize: 12 }}
-          axisLine={false}
-          tickLine={false}
-          width={56}
-        />
-        <Tooltip
-          cursor={type === 'bar' ? { fill: 'rgba(31,95,214,0.06)' } : { stroke: chartColors.axis, strokeDasharray: '3 3' }}
-          content={({ active, payload, label }) =>
-            active && payload?.length ? (
-              <ChartTooltip
-                title={formatPeriod(label)}
-                rows={[
-                  { label: 'Sales', value: formatCurrency(payload[0].payload.value, currency) },
-                  { label: 'Transactions', value: formatNumber(payload[0].payload.transactions) },
-                ]}
-              />
-            ) : null
-          }
-        />
-        {type === 'bar' ? (
-          <Bar dataKey="value" fill={chartColors.series1} radius={[4, 4, 0, 0]} maxBarSize={36} isAnimationActive={false} />
-        ) : (
-          <Line
-            dataKey="value"
-            stroke={chartColors.series1}
-            strokeWidth={2}
-            dot={{ r: 3, fill: chartColors.series1, strokeWidth: 0 }}
-            activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }}
-            isAnimationActive={false}
-          />
-        )}
-      </ComposedChart>
-    </ResponsiveContainer>
+  const option = useMemo(
+    () => ({
+      ...baseOption({
+        axisPointer: type === 'bar' ? shadowPointer : linePointer,
+        formatter: (params) => {
+          const row = data[params[0].dataIndex];
+          return tooltipHtml(formatPeriod(row.period), [
+            { label: 'Sales', value: formatCurrency(row.value, currency) },
+            { label: 'Transactions', value: formatNumber(row.transactions) },
+          ]);
+        },
+      }),
+      grid: { top: 12, right: 12, bottom: 8, left: 4, containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: data.map((d) => d.period),
+        boundaryGap: type === 'bar',
+        axisLabel: { color: chartColors.axis, fontSize: 12, formatter: formatPeriodShort, hideOverlap: true },
+        axisLine: { lineStyle: { color: chartColors.grid } },
+        axisTick: { show: false },
+      },
+      yAxis: valueAxis,
+      series: [
+        type === 'bar'
+          ? {
+              type: 'bar',
+              data: data.map((d) => d.value),
+              itemStyle: { color: chartColors.series1, borderRadius: [4, 4, 0, 0] },
+              barMaxWidth: 36,
+            }
+          : {
+              type: 'line',
+              data: data.map((d) => d.value),
+              lineStyle: { color: chartColors.series1, width: 2 },
+              itemStyle: { color: chartColors.series1 },
+              symbol: 'circle',
+              symbolSize: 6,
+              emphasis: { scale: 1.6, itemStyle: { borderColor: '#fff', borderWidth: 2 } },
+            },
+      ],
+    }),
+    [data, currency, type],
   );
+
+  return <EChart option={option} height={height} ariaLabel={`Monthly sales in ${currency}`} />;
 }

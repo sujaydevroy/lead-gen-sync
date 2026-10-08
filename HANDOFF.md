@@ -11,7 +11,7 @@ dealers by country / region / sector and communicate with them, plus Excel sales
 
 | Part | Stack | Where |
 |---|---|---|
-| Frontend | Next.js 16 (App Router), React 19, **JavaScript**, MUI 9, Redux Toolkit, React Hook Form, Recharts 3 | `frontend/` (`frontend/src/`, `frontend/public/`) |
+| Frontend | Next.js 16 (App Router), React 19, **JavaScript**, MUI 9, Redux Toolkit, React Hook Form, Apache ECharts 6 | `frontend/` (`frontend/src/`, `frontend/public/`) |
 | Backend | Python 3.14 venv, FastAPI, SQLAlchemy 2 (**sync** sessions), psycopg 3, Alembic, Pydantic 2, pwdlib/Argon2, PyJWT, openpyxl | `backend/` |
 | Database | PostgreSQL on **Supabase** (PG 17), schema **`dcp`** (27 tables) | `database/` (SQL), `backend/alembic/` |
 
@@ -29,20 +29,30 @@ dealers by country / region / sector and communicate with them, plus Excel sales
   company `SYS-PLATFORM` (`companies.is_platform`), see only Companies / Dealer Upload / My Profile / Settings,
   create / edit / deactivate companies (each new company gets its first Company Administrator), edit each
   company's users (name, email, job title, phone, role, unlock, temporary password — not add / deactivate), and
-  upload dealer files into the **platform dealer pool** (no table changes: pool dealers are ordinary `dealers`
-  rows owned by the hidden platform company `SYS-PLATFORM`; dealers not given to any client yet; future matching logic will offer them to clients by industry / sector / products —
-  `product_sub_sectors` already maps products to sub-sectors). Tenant queries all filter by company_id, so pool
-  dealers are invisible to clients. Dealer files (.xlsx / .xls / .csv / .json like dealers.json; upsert by
+  upload dealer files into the **dealer directory**. Dealer files (.xlsx / .xls / .csv / .json like dealers.json; upsert by
   Dealer ID, row errors reported). Uploads are saved **only** in `dcp.dealers` + `dealer_products` / `products` /
   `product_sub_sectors` (no upload log table — the user asked for that; `created_by/modified_by` show who). `Company Administrator` manages its own company's users on the
   Users page (add with temporary password, role, activate / deactivate, unlock, set password). Everyone can
   change their own password under My Profile. Create a system admin with
   `.venv\Scripts\python -m app.cli create-sysadmin <email> --name "..."` (from `backend/`).
+- **Dealers belong to no company (2026-10-08, user's decision, migration 0005):** `dcp.dealers` holds dealer data
+  only (no `company_id`); Dealer ID (`dealer_code`) is unique system-wide. Planned matching: at onboarding the
+  client's industry is mapped by AI at runtime to the products it deals in, and `dealer_products` tells which
+  dealers supply those products. Until that exists **every client sees every active dealer**; the one place to
+  narrow it is `visible_scope(company)` in `backend/app/repositories/dealer_repository.py`. Communications, sales
+  and exchange rates stay private per company. The old "platform dealer pool" is gone (`GET /admin/dealer-directory`
+  replaces `/admin/dealer-pool`; uploads take no company). Migration 0005 renumbers duplicate Dealer IDs (oldest
+  row keeps the code, later ones get the next free DLR-xxxx) instead of deleting anything.
+- **Company profile editing (2026-10-08):** Company Details has an **Edit company** button for the Company
+  Administrator (every company's one user in the demo) → `PUT /companies/me` (same fields / validation as the
+  admin edit) + `GET /companies/me/options` (sectors, countries, regions). My Profile already edits name, job
+  title, phone and password; email stays read-only there (it is the sign-in; a system admin can change it).
 - Backend: 34+ endpoints under `/api/v1`, cookie auth with refresh rotation + CSRF, tenant scoping by company.
-- **Supabase database is migrated to `0004_drop_dealer_uploads` (head).** Seeded (57 dealers, 40 sectors /
+- **Supabase database is migrated to `0004_drop_dealer_uploads`; head is now `0005_dealers_drop_company`** — run
+  `.venv\Scripts\python -m app.cli setup` (from `backend/`) to apply it. Seeded (57 dealers, 40 sectors /
   553 sub-sectors, company ABC Corporation, user john.smith@abc.com with a password the user chose — Claude
   does not know it).
-- Tests: backend **67 passed** (18 unit + 49 integration); `npx next build` (from `frontend/`) passes.
+- Tests: backend **69 passed** (18 unit + 51 integration); `npx next build` (from `frontend/`) passes.
 - Git: repo initialised, remote **`https://github.com/sujaydevroy/lead-gen-sync`**, branch **`master`**,
   pushed up to `0e0dcbb` (2026-10-08 restructure into `frontend/`, `backend/`, `database/`,
   `data-crawler-service/`). Three `.gitignore` files: root (secrets `.env*` except `.env.example`,
@@ -102,6 +112,8 @@ frontend/src/   (frontend/package.json, next.config.mjs, public/ alongside)
   services/*.js           thin API wrappers (auth, dealer, company, communication, sales, settings)
   store/                  Redux: salesSlice (in-page sales workspace), dealerListSlice, settingsSlice
   lib/salesAnalytics.js, lib/salesForecast.js   analytics + forecast run in the browser
+  components/charts/      EChart.jsx (tree-shaken ECharts 6 wrapper, SVG renderer) + chartOptions.js (shared
+                          tooltip / axis styling); MonthlySalesChart, RankedBarChart, forecast/SalesForecastChart
   components/providers/   AuthProvider (verified flag, company + sectorDefinition), SettingsSync
 backend/
   app/main.py, app/cli.py (setup, seed, set-password, seed-demo-communications, remap-products,
@@ -113,12 +125,12 @@ backend/
                           exchange_rate, storage (local disk), user
   app/services/analytics/ Python ports of the JS parsing / analytics / forecast (exact parity)
   alembic/versions/       0001_baseline (runs 02_schema.sql), 0002_sales_upload_detail, 0003_admin_dealer_uploads,
-                          0004_drop_dealer_uploads
+                          0004_drop_dealer_uploads, 0005_dealers_drop_company
   app/api/v1/admin.py     system administration; app/services/dealer_import_service.py + tabular_reader.py (uploads)
   setup_env.py            interactive .env creator (URL-encodes the password)
   tests/unit, tests/integration
 database/
-  02_schema.sql (complete current schema), migrations/0002 … 0004 (*.sql),
+  02_schema.sql (complete current schema), migrations/0002 … 0005 (*.sql),
   03_seed.sql (generated by generate_seed.py from dealers.json + sector.json), generate_erd.py
 data-crawler-service/   placeholder (main.py) for the future crawler service
 BACKEND_PLAN.md, ERD.md, erd.html, HANDOFF.md, *.pptx   docs at the repo root

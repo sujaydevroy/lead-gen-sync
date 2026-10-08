@@ -29,7 +29,7 @@ import { useNotify } from '@/components/providers/NotificationProvider';
 import useAsync from '@/hooks/useAsync';
 import useDebounce from '@/hooks/useDebounce';
 import adminService from '@/services/adminService';
-import { formatDate, formatNumber } from '@/lib/format';
+import { formatDate } from '@/lib/format';
 
 export default function CompaniesPage() {
   const router = useRouter();
@@ -105,7 +105,6 @@ export default function CompaniesPage() {
                   <TableCell>User</TableCell>
                   <TableCell>Sector</TableCell>
                   <TableCell>Location</TableCell>
-                  <TableCell align="right">Dealers</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Created</TableCell>
                 </TableRow>
@@ -146,7 +145,6 @@ export default function CompaniesPage() {
                     </TableCell>
                     <TableCell>{company.sector || '—'}</TableCell>
                     <TableCell>{[company.address?.city, company.address?.country].filter(Boolean).join(', ') || '—'}</TableCell>
-                    <TableCell align="right">{formatNumber(company.dealerCount)}</TableCell>
                     <TableCell>
                       <StatusBadge status={company.isActive ? 'Active' : 'Inactive'} />
                     </TableCell>
