@@ -22,8 +22,8 @@ const toForm = (user) => ({
   role: user?.role || '',
 });
 
-/** System administrators edit a company user's details and role. `onSave(changes)` returns the updated user. */
-export default function EditUserDialog({ user, roles, onClose, onSave, onSaved }) {
+/** Edit a company user's details and role. `onSave(changes)` returns the updated user; `lockRole` for yourself. */
+export default function EditUserDialog({ user, roles, onClose, onSave, onSaved, lockRole = false }) {
   const [serverError, setServerError] = useState('');
   const {
     register,
@@ -81,7 +81,14 @@ export default function EditUserDialog({ user, roles, onClose, onSave, onSaved }
             name="role"
             control={control}
             render={({ field: roleField }) => (
-              <TextField select fullWidth label="Role *" {...roleField}>
+              <TextField
+                select
+                fullWidth
+                label="Role *"
+                {...roleField}
+                disabled={lockRole}
+                helperText={lockRole ? 'You cannot change your own role' : undefined}
+              >
                 {roleOptions.map((role) => (
                   <MenuItem key={role} value={role}>
                     {role}

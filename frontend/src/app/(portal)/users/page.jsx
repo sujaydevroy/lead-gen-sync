@@ -14,6 +14,7 @@ import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
 import PageHeader from '@/components/ui/PageHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import UserTable from '@/components/admin/UserTable';
+import EditUserDialog from '@/components/admin/EditUserDialog';
 import AddUserDialog from '@/components/users/AddUserDialog';
 import SetPasswordDialog from '@/components/users/SetPasswordDialog';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -31,6 +32,7 @@ export default function UsersPage() {
   const [adding, setAdding] = useState(false);
   const [passwordFor, setPasswordFor] = useState(null);
   const [deactivating, setDeactivating] = useState(null);
+  const [editing, setEditing] = useState(null);
 
   const rows = list ?? users;
   const replace = (updated) => setList((rows ?? []).map((u) => (u.id === updated.id ? updated : u)));
@@ -89,6 +91,7 @@ export default function UsersPage() {
             busyId={busyId}
             onChangeRole={changeRole}
             onToggleActive={(user, active) => (active ? setActive(user, true) : setDeactivating(user))}
+            onEdit={setEditing}
             onUnlock={(user) => run(user, () => companyUserService.unlockUser(user.id), (u) => `${u.name} was unlocked`)}
             onSetPassword={setPasswordFor}
           />
@@ -130,6 +133,19 @@ export default function UsersPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <EditUserDialog
+        user={editing}
+        roles={roles || []}
+        lockRole={editing?.id === me.id}
+        onClose={() => setEditing(null)}
+        onSave={(changes) => companyUserService.updateUser(editing.id, changes)}
+        onSaved={(updated) => {
+          replace(updated);
+          setEditing(null);
+          notify(`${updated.name} was updated`, 'success');
+        }}
+      />
 
       <SetPasswordDialog
         user={passwordFor}

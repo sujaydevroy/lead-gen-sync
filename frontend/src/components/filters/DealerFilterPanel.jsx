@@ -76,7 +76,8 @@ export default function DealerFilterPanel({ facets, applied, onApply, onClearAll
   const sectorName = companySector?.sector;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    // flex: 1 + minHeight: 0 lets the list below shrink to the space left and scroll (sidebar and mobile drawer).
+    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, height: '100%' }}>
       <Stack direction="row" sx={{ px: 2.5, py: 2, alignItems: 'center', justifyContent: 'space-between' }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <FilterListRoundedIcon fontSize="small" color="primary" />
@@ -90,7 +91,11 @@ export default function DealerFilterPanel({ facets, applied, onApply, onClearAll
       </Stack>
       <Divider />
 
-      <Stack spacing={2.25} divider={<Divider flexItem />} sx={{ px: 2.5, py: 2, overflowY: 'auto', flexGrow: 1 }}>
+      <Stack
+        spacing={2.25}
+        divider={<Divider flexItem />}
+        sx={{ px: 2.5, py: 2, overflowY: 'auto', overscrollBehavior: 'contain', flex: 1, minHeight: 0, '& > *': { flexShrink: 0 } }}
+      >
         <FilterGroup
           title="Country"
           options={facets.countries}

@@ -19,7 +19,7 @@ import CompanyFormFields, { EMPTY_COMPANY, formToPayload } from './CompanyFormFi
 
 const EMPTY_ADMIN = { adminName: '', adminEmail: '', adminJobTitle: '', adminPassword: '' };
 
-/** New company + its one user (demo 1:1 mapping; the user gets the Company Administrator role). */
+/** New company + its first user (Company Administrator); more users are added on the company page. */
 export default function CreateCompanyDialog({ open, onClose, onCreated, lookups }) {
   const [serverError, setServerError] = useState('');
   const errorRef = useRef(null);

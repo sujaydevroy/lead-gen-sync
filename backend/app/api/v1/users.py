@@ -69,7 +69,7 @@ def create_user(payload: UserCreate, auth: AuthContext = Depends(company_admin),
 def update_user(
     user_code: str, payload: ManagedUserUpdate, auth: AuthContext = Depends(company_admin), db: Session = Depends(get_db)
 ):
-    """Change a user's role and / or status (isActive false = deactivate; their sessions end)."""
+    """Edit a user's details, role and / or status (isActive false = deactivate; their sessions end)."""
     return company_user_service.update_user(db, auth.company, auth.user, user_code, payload)
 
 

@@ -17,8 +17,11 @@ import companyUserService from '@/services/companyUserService';
 
 const EMPTY = { name: '', email: '', jobTitle: '', phone: '', role: 'Viewer', password: '' };
 
-/** Add a user to the administrator's company with a temporary password. */
-export default function AddUserDialog({ open, roles, onClose, onCreated }) {
+/**
+ * Add a user with a temporary password. `onCreate(values)` saves it (default: the Company Administrator's own
+ * company; the System Administrator passes one that adds to the company being viewed).
+ */
+export default function AddUserDialog({ open, roles, onClose, onCreated, onCreate = companyUserService.createUser }) {
   const [serverError, setServerError] = useState('');
   const {
     register,
@@ -38,7 +41,7 @@ export default function AddUserDialog({ open, roles, onClose, onCreated }) {
   const onSubmit = async (values) => {
     setServerError('');
     try {
-      const user = await companyUserService.createUser({
+      const user = await onCreate({
         name: values.name.trim(),
         email: values.email.trim(),
         jobTitle: values.jobTitle.trim() || null,

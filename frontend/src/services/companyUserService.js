@@ -17,7 +17,7 @@ const companyUserService = {
     return api.post('/users', values);
   },
 
-  /** changes = { role } and / or { isActive } */
+  /** changes = any of { name, email, jobTitle, phone, role, isActive } (only the fields sent change) */
   updateUser(userId, changes) {
     return api.patch(`/users/${encodeURIComponent(userId)}`, changes);
   },

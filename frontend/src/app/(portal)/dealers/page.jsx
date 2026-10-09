@@ -143,7 +143,9 @@ export default function DealersPage() {
           component="aside"
           aria-label="Dealer filters"
           sx={{
-            display: { xs: 'none', md: 'block' },
+            // A flex column with a max height: the filter list scrolls inside, the buttons stay visible.
+            display: { xs: 'none', md: 'flex' },
+            flexDirection: 'column',
             width: SIDEBAR_WIDTH,
             flexShrink: 0,
             position: 'sticky',

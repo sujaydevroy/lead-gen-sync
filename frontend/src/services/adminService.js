@@ -46,12 +46,17 @@ const adminService = {
     return api.post(`/admin/companies/${encodeURIComponent(companyId)}/activate`);
   },
 
-  /** Users of a company (read-only here; the company's own administrator manages them). */
+  /** All users of a company, including inactive ones. */
   getCompanyUsers(companyId) {
     return api.get(`/admin/companies/${encodeURIComponent(companyId)}/users`);
   },
 
-  /** changes = any of { name, email, jobTitle, phone, role } (only the fields sent change) */
+  /** values = { name, email, jobTitle, phone, role, password } (password = temporary password) */
+  addCompanyUser(companyId, values) {
+    return api.post(`/admin/companies/${encodeURIComponent(companyId)}/users`, values);
+  },
+
+  /** changes = any of { name, email, jobTitle, phone, role, isActive } (only the fields sent change) */
   updateCompanyUser(companyId, userId, changes) {
     return api.patch(`/admin/companies/${encodeURIComponent(companyId)}/users/${encodeURIComponent(userId)}`, changes);
   },

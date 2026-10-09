@@ -20,15 +20,17 @@ dealers by country / region / sector and communicate with them, plus Excel sales
 - Frontend is fully wired to the API (no mock data left). Login → dealers (server-side filters, facets, pagination) →
   dealer details → messages with attachments → communications → dashboard → company / profile / settings →
   Upload Sales (stored server-side, "Recent uploads" reopen / download / delete) → Sales Forecast.
-- **Demo simplification (2026-10-08, user's decision — keep it, don't erase the hidden code):** only *admin*
-  (System Administrator) and *user*. Each company is shown with ONE user (1:1), mapped without table changes:
-  the company's first user (`admin_service.primary_users`), returned as `user` on `/admin/companies*`. The
-  company Users page is hidden by `FEATURES.companyUserManagement = false` in `frontend/src/lib/features.js`
-  (API `/users` still works); regular users only have My Profile for their own account.
+- **User management is back on (2026-10-09, reverses the 2026-10-08 one-user demo):** companies can have many
+  users. `FEATURES.companyUserManagement = true` (`frontend/src/lib/features.js`): a Company Administrator has the
+  **Users** page again (add with temporary password, edit name / email / job title / phone, role, activate /
+  deactivate, unlock, set password). The System Administrator's company page lists all of the company's users with
+  the same actions plus **Add user** (`POST /admin/companies/{id}/users`). Both use one update function
+  (`company_user_service.update_user`, payload `ManagedUserUpdate`); nobody can change their own role or deactivate
+  themselves. `/admin/companies*` still returns the first user as `user` (company list column, "+N more").
 - **Roles (2026-10-08):** `System Administrator` = the platform owners (us). They belong to the hidden platform
   company `SYS-PLATFORM` (`companies.is_platform`), see only Companies / Dealer Upload / My Profile / Settings,
   create / edit / deactivate companies (each new company gets its first Company Administrator), edit each
-  company's users (name, email, job title, phone, role, unlock, temporary password — not add / deactivate), and
+  company's users (add, edit details / role, activate / deactivate, unlock, temporary password), and
   upload dealer files into the **dealer directory**. Dealer files (.xlsx / .xls / .csv / .json like dealers.json; upsert by
   Dealer ID, row errors reported). Uploads are saved **only** in `dcp.dealers` + `dealer_products` / `products` /
   `product_sub_sectors` (no upload log table — the user asked for that; `created_by/modified_by` show who). `Company Administrator` manages its own company's users on the
@@ -64,7 +66,7 @@ dealers by country / region / sector and communicate with them, plus Excel sales
   `.venv\Scripts\python -m app.cli setup` (from `backend/`) to apply 0005 and 0006. Seeded (57 dealers, 40 sectors /
   553 sub-sectors, company ABC Corporation, user john.smith@abc.com with a password the user chose — Claude
   does not know it).
-- Tests: backend **71 passed** (18 unit + 53 integration); `npx next build` (from `frontend/`) passes.
+- Tests: backend **73 passed** (18 unit + 55 integration); `npx next build` (from `frontend/`) passes.
 - Git: repo initialised, remote **`https://github.com/sujaydevroy/lead-gen-sync`**, branch **`master`**,
   pushed up to `0e0dcbb` (2026-10-08 restructure into `frontend/`, `backend/`, `database/`,
   `data-crawler-service/`). Three `.gitignore` files: root (secrets `.env*` except `.env.example`,

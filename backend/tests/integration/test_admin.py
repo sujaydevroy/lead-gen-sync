@@ -341,6 +341,33 @@ def test_sysadmin_edits_company_users(client):
     assert "roles" in sysadmin(client).get("/api/v1/admin/lookups").json()
 
 
+def test_sysadmin_adds_and_deactivates_company_users(client):
+    sysadmin(client)
+    code = new_company(client, "Many Users Co", "first@manyusers.example")["id"]
+    base = f"/api/v1/admin/companies/{code}/users"
+    payload = {
+        "name": "Second User",
+        "email": "second@manyusers.example",
+        "role": "Sales Manager",
+        "password": "Second-Temp-2026",
+    }
+    added = client.post(base, json=payload)
+    assert added.status_code == 201, added.text
+    second = added.json()
+    assert second["role"] == "Sales Manager" and second["isActive"] is True
+    assert client.post(base, json=payload).status_code == 409  # same email
+    assert client.post(base, json={**payload, "email": "x@manyusers.example", "role": "System Administrator"}).status_code == 422
+    assert [u["email"] for u in client.get(base).json()] == ["first@manyusers.example", "second@manyusers.example"]
+    assert client.get(f"/api/v1/admin/companies/{code}").json()["userCount"] == 2
+
+    assert client.patch(f"{base}/{second['id']}", json={"isActive": False}).json()["isActive"] is False
+    login_response = client.post("/api/v1/auth/login", json={"email": "second@manyusers.example", "password": "Second-Temp-2026"})
+    assert login_response.status_code == 401
+    sysadmin(client)
+    assert client.patch(f"{base}/{second['id']}", json={"isActive": True}).json()["isActive"] is True
+    assert client.post("/api/v1/admin/companies/CMP-NOPE/users", json=payload).status_code == 404
+
+
 def test_company_has_one_user_mapping(client):
     """Demo 1:1 mapping: each company is shown with one user, its first user (no table changes)."""
     sysadmin(client)

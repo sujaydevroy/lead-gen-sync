@@ -33,10 +33,8 @@ function StatusChips({ user }) {
 }
 
 /**
- * Users of one company. With `manage`, a Company Administrator changes roles inline and activates /
- * deactivates; with `onEdit`, a System Administrator edits details and role in a dialog. Both can unlock
- * accounts and set temporary passwords.
- * changes roles, activates / deactivates, unlocks and sets temporary passwords.
+ * Users of one company. With `manage`, roles change inline and users are activated / deactivated; with `onEdit`,
+ * details and role are edited in a dialog. Accounts can be unlocked and given temporary passwords.
  */
 export default function UserTable({
   users,

@@ -50,7 +50,7 @@ export default function CompaniesPage() {
     <>
       <PageHeader
         title="Companies"
-        subtitle="Clients: each company and its user"
+        subtitle="Clients: each company and its users"
         actions={
           <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setCreating(true)}>
             New company
@@ -134,7 +134,14 @@ export default function CompaniesPage() {
                     <TableCell>
                       {company.user ? (
                         <>
-                          <Typography variant="body2">{company.user.name}</Typography>
+                          <Typography variant="body2">
+                            {company.user.name}
+                            {company.userCount > 1 && (
+                              <Typography component="span" variant="caption" color="text.secondary">
+                                {` +${company.userCount - 1} more`}
+                              </Typography>
+                            )}
+                          </Typography>
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', wordBreak: 'break-all' }}>
                             {company.user.email}
                           </Typography>

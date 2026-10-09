@@ -82,10 +82,27 @@ def create_user(db: Session, company: Company, payload: UserCreate) -> ManagedUs
     return user_to_managed_out(user)
 
 
-def update_user(db: Session, company: Company, actor: User, user_code: str, payload: ManagedUserUpdate) -> ManagedUserOut:
+def update_user(db: Session, company: Company, actor: User | None, user_code: str, payload: ManagedUserUpdate) -> ManagedUserOut:
+    """Edit a user of `company`: name, email, job title, phone, role, active (only the fields sent change).
+
+    `actor` is the signed-in administrator; nobody can change their own role or deactivate themselves.
+    """
     user = _get(db, company, user_code)
-    if user.id == actor.id and ((payload.role is not None and payload.role != user.role.name) or payload.is_active is False):
+    sent = payload.model_fields_set
+    is_self = actor is not None and user.id == actor.id
+    if is_self and ((payload.role is not None and payload.role != user.role.name) or payload.is_active is False):
         raise ApiError(409, "You cannot change your own role or deactivate your own account.")
+    if "email" in sent and payload.email is not None and str(payload.email).lower() != user.email.lower():
+        other = auth_service.find_user_by_email(db, str(payload.email))
+        if other is not None and other.id != user.id:
+            raise ApiError(409, f"A user with the email {payload.email} already exists.")
+        user.email = str(payload.email)
+    if "name" in sent and payload.name is not None:
+        user.full_name = payload.name
+    if "job_title" in sent:
+        user.job_title = payload.job_title
+    if "phone" in sent:
+        user.phone = payload.phone
     if payload.role is not None and payload.role != user.role.name:
         user.role_id = role_id_for(db, payload.role)
     deactivated = payload.is_active is False and user.is_active

@@ -21,6 +21,7 @@ from app.schemas.admin import (
     DealerUploadOut,
     ManagedUserOut,
     PasswordSet,
+    UserCreate,
 )
 from app.services import admin_service, dealer_import_service
 
@@ -76,12 +77,22 @@ def company_users(company_code: str, _: AuthContext = Depends(sysadmin), db: Ses
     return admin_service.company_users(db, company_code)
 
 
+@router.post("/companies/{company_code}/users", response_model=ManagedUserOut, status_code=201)
+def add_company_user(company_code: str, payload: UserCreate, _: AuthContext = Depends(sysadmin), db: Session = Depends(get_db)):
+    """Add a user with a temporary password to the company."""
+    return admin_service.add_company_user(db, company_code, payload)
+
+
 @router.patch("/companies/{company_code}/users/{user_code}", response_model=ManagedUserOut)
 def update_company_user(
-    company_code: str, user_code: str, payload: AdminUserUpdate, _: AuthContext = Depends(sysadmin), db: Session = Depends(get_db)
+    company_code: str,
+    user_code: str,
+    payload: AdminUserUpdate,
+    auth: AuthContext = Depends(sysadmin),
+    db: Session = Depends(get_db),
 ):
-    """Edit a user's name, email, job title, phone or role (only the fields sent change)."""
-    return admin_service.update_company_user(db, company_code, user_code, payload)
+    """Edit a user's name, email, job title, phone, role or status (only the fields sent change)."""
+    return admin_service.update_company_user(db, company_code, user_code, payload, actor=auth.user)
 
 
 @router.post("/companies/{company_code}/users/{user_code}/unlock", response_model=ManagedUserOut)

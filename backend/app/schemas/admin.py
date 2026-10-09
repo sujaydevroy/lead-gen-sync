@@ -112,20 +112,17 @@ class UserCreate(NewUserFields):
 
 
 class ManagedUserUpdate(CamelModel):
-    """Company Administrators change a user's role and status (active / inactive)."""
+    """Edit a company user: details, role and status (PATCH: only the fields sent change).
 
-    role: str | None = None
-    is_active: bool | None = None
-
-
-class AdminUserUpdate(CamelModel):
-    """System administrators edit a company user's details and role (PATCH: only the fields sent change)."""
+    Used by a Company Administrator for their own company's users and by a System Administrator for any company.
+    """
 
     name: str | None = Field(default=None, min_length=2, max_length=150)
     email: EmailStr | None = None
     job_title: str | None = Field(default=None, max_length=80)
     phone: str | None = Field(default=None, pattern=PHONE_PATTERN)
     role: str | None = None
+    is_active: bool | None = None
 
     @field_validator("name", "email", mode="before")
     @classmethod
@@ -136,6 +133,9 @@ class AdminUserUpdate(CamelModel):
     @classmethod
     def _optional(cls, value):
         return _blank_to_none(value)
+
+
+AdminUserUpdate = ManagedUserUpdate  # same payload for system administrators
 
 
 class PasswordSet(CamelModel):

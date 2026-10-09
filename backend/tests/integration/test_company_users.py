@@ -76,3 +76,21 @@ def test_admin_cannot_lock_themselves_out_or_touch_other_companies(client):
     assert client.patch("/api/v1/users/USR-3001", json={"isActive": False}).status_code == 404  # Omar, other company
     assert client.post("/api/v1/users/USR-9001/password", json={"password": "Hijack-Pass-2026"}).status_code == 404
     assert sign_in(client, "john.smith@abc.com", DEMO_PASSWORD).status_code == 200
+
+
+def test_company_admin_edits_user_details(client):
+    login(client)
+    payload = {"name": "Ravi Rao", "email": "ravi.rao@abc.com", "role": "Viewer", "password": TEMP_PASSWORD}
+    code = client.post("/api/v1/users", json=payload).json()["id"]
+    edited = client.patch(
+        f"/api/v1/users/{code}",
+        json={"name": "Ravi K. Rao", "email": "ravi.k.rao@abc.com", "jobTitle": "Area Manager", "phone": "+91 98100 33333"},
+    )
+    assert edited.status_code == 200, edited.text
+    body = edited.json()
+    assert (body["name"], body["email"], body["jobTitle"], body["phone"], body["role"]) == (
+        "Ravi K. Rao", "ravi.k.rao@abc.com", "Area Manager", "+91 98100 33333", "Viewer",
+    )  # fmt: skip
+    assert client.patch(f"/api/v1/users/{code}", json={"email": "john.smith@abc.com"}).status_code == 409
+    assert client.patch(f"/api/v1/users/{code}", json={"jobTitle": ""}).json()["jobTitle"] is None
+    assert sign_in(client, "ravi.k.rao@abc.com", TEMP_PASSWORD).status_code == 200  # signs in with the new email

@@ -15,7 +15,15 @@ from app.core.errors import ApiError, not_found
 from app.core.roles import COMPANY_ADMIN
 from app.core.security import hash_password
 from app.models import Company, Country, Currency, DealerStatus, DealerType, Region, Role, Sector, User
-from app.schemas.admin import AdminCompanyOut, AdminLookups, AdminUserUpdate, CompanyCreate, CompanyFields, ManagedUserOut
+from app.schemas.admin import (
+    AdminCompanyOut,
+    AdminLookups,
+    AdminUserUpdate,
+    CompanyCreate,
+    CompanyFields,
+    ManagedUserOut,
+    UserCreate,
+)
 from app.schemas.company import CompanyOptions, CompanyOut
 from app.services import auth_service, company_user_service
 from app.services.codes import next_code
@@ -243,29 +251,16 @@ def company_users(db: Session, company_code: str) -> list[ManagedUserOut]:
     return [user_to_managed_out(u) for u in users]
 
 
-def update_company_user(db: Session, company_code: str, user_code: str, payload: AdminUserUpdate) -> ManagedUserOut:
-    """Edit a company user's details / role. Adding and removing users stays with the company's own administrators."""
-    company = get_company(db, company_code)
-    user = db.scalar(select(User).where(User.company_id == company.id, User.user_code == user_code))
-    if user is None:
-        raise not_found("User")
-    sent = payload.model_fields_set
-    if "email" in sent and payload.email is not None:
-        other = auth_service.find_user_by_email(db, str(payload.email))
-        if other is not None and other.id != user.id:
-            raise ApiError(409, f"A user with the email {payload.email} already exists.")
-        user.email = str(payload.email)
-    if "name" in sent and payload.name is not None:
-        user.full_name = payload.name
-    if "job_title" in sent:
-        user.job_title = payload.job_title
-    if "phone" in sent:
-        user.phone = payload.phone
-    if "role" in sent and payload.role is not None and payload.role != user.role.name:
-        user.role_id = company_user_service.role_id_for(db, payload.role)
-    db.commit()
-    db.refresh(user)
-    return user_to_managed_out(user)
+def update_company_user(
+    db: Session, company_code: str, user_code: str, payload: AdminUserUpdate, actor: User | None = None
+) -> ManagedUserOut:
+    """Edit a company user's details, role or status (only the fields sent change)."""
+    return company_user_service.update_user(db, get_company(db, company_code), actor, user_code, payload)
+
+
+def add_company_user(db: Session, company_code: str, payload: UserCreate) -> ManagedUserOut:
+    """Add a user (with a temporary password) to a company."""
+    return company_user_service.create_user(db, get_company(db, company_code), payload)
 
 
 def unlock_company_user(db: Session, company_code: str, user_code: str) -> ManagedUserOut:
