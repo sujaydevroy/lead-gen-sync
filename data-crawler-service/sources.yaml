@@ -1,0 +1,91 @@
+# Dealer sources (Phase 0: India, tobacco). See DESIGN.md §4 and README.md.
+#
+# adapter   tabular  data.gov.in API (datagov_resource + DATA_GOV_IN_API_KEY) or a downloaded file (file:)
+#           html     list pages / PDFs: tables are read directly, pages without a table go to the AI
+#           ai_page  pages known to have no table: always read by the AI
+# kind      registry (MCA), msme_registry (Udyam), tax_registry (GST), food_licence (FSSAI), commodity_board
+#           (Tobacco Board), trade_fair, website, open_data, paid_api, manual
+# profile   column names of the dataset: mca, udyam or generic (add spellings with `columns:`)
+# filter    tobacco = keep rows with a tobacco industry code (NIC 120xx / 160xx / 46307 / 4723x) or tobacco
+#           products in the activity text; none = keep every row (for lists that are all tobacco)
+
+sources:
+  # --- MCA company master data, one file per state (data.gov.in -> "Company Master Data") ---------------------
+  # Download the state's CSV into inputs/mca/ (or set datagov_resource to the resource id shown on the dataset
+  # page and DATA_GOV_IN_API_KEY to read it through the API instead of a file).
+  - id: mca-uttar-pradesh
+    adapter: tabular
+    kind: registry
+    profile: mca
+    name: MCA company master data (Uttar Pradesh)
+    source_url: https://www.data.gov.in/catalog/company-master-data
+    file: inputs/mca/uttar_pradesh.csv
+
+  - id: mca-andhra-pradesh
+    adapter: tabular
+    kind: registry
+    profile: mca
+    name: MCA company master data (Andhra Pradesh)
+    source_url: https://www.data.gov.in/catalog/company-master-data
+    file: inputs/mca/andhra_pradesh.csv
+
+  - id: mca-west-bengal
+    adapter: tabular
+    kind: registry
+    profile: mca
+    name: MCA company master data (West Bengal)
+    source_url: https://www.data.gov.in/catalog/company-master-data
+    file: inputs/mca/west_bengal.csv
+
+  - id: mca-gujarat
+    adapter: tabular
+    kind: registry
+    profile: mca
+    name: MCA company master data (Gujarat)
+    source_url: https://www.data.gov.in/catalog/company-master-data
+    file: inputs/mca/gujarat.csv
+
+  - id: mca-karnataka
+    adapter: tabular
+    kind: registry
+    profile: mca
+    name: MCA company master data (Karnataka)
+    source_url: https://www.data.gov.in/catalog/company-master-data
+    file: inputs/mca/karnataka.csv
+
+  # --- Udyam (MSME) units: proprietorships and partnerships, which MCA does not have --------------------------
+  # Enable after checking that the unit-level list (with activity / NIC) can be downloaded or requested.
+  - id: udyam-uttar-pradesh
+    enabled: false
+    adapter: tabular
+    kind: msme_registry
+    profile: udyam
+    name: Udyam registered units (Uttar Pradesh)
+    source_url: https://www.data.gov.in/catalog/list-msme-registered-units-under-udyam
+    file: inputs/udyam/uttar_pradesh.csv
+
+  # --- Tobacco Board of India: registered exporters / dealers (exporters are in scope, free sources + AI) -----
+  # Put the exact list page(s) or PDF(s) in urls after checking the portal; follow_links picks up PDF lists.
+  - id: tobacco-board-exporters
+    enabled: false
+    adapter: html
+    kind: commodity_board
+    name: Tobacco Board of India - registered exporters
+    urls:
+      - https://tobaccoboard.commerce.gov.in/
+    follow_links: "(?i)(export|dealer|trader|registered).*(\\.pdf|list)"
+    max_pages: 10
+    filter: none
+    default_dealer_type: Exporter / Importer
+    default_products: [Tobacco]
+    hint: list of tobacco exporters / dealers registered with the Tobacco Board of India
+
+  # --- Your own lists (trade-fair exhibitors, association members, ...) as CSV / Excel -----------------------
+  - id: manual-list
+    enabled: false
+    adapter: tabular
+    kind: manual
+    profile: generic
+    name: Manually collected list
+    file: inputs/manual/dealers.csv
+    filter: tobacco

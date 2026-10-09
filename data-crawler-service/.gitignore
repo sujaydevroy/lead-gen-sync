@@ -1,0 +1,21 @@
+# Dealer crawler
+
+# Virtual environment and crawl data (page cache, run outputs, identity map): local only
+.venv/
+var/
+
+# Python build / tool caches
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Environment files: only .env.example is tracked
+.env
+.env.*
+!.env.example
+
+# Downloaded source files (public data, but large): keep only the README
+inputs/**
+!inputs/README.md
+!inputs/*/

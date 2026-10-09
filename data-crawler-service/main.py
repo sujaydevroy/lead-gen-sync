@@ -1,13 +1,8 @@
-"""Data crawler service (placeholder).
+"""Entry point kept for convenience: same as `python -m crawler ...` (see README.md)."""
 
-Not implemented yet. This folder is reserved for the service that will crawl and collect dealer /
-lead data. It is independent of backend/ and frontend/.
-"""
+import sys
 
-
-def main() -> None:
-    print("data-crawler-service: not implemented yet")
-
+from crawler.cli import main
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
