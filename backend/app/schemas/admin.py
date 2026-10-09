@@ -167,12 +167,15 @@ class DealerUploadOut(CamelModel):
     column_mapping: dict[str, str]
     issues: list[DealerUploadIssue]
     ignored_columns: list[str] = Field(default_factory=list)
+    created_lookups: dict[str, list[str]] = Field(default_factory=dict)  # e.g. {"Country": ["Nepal"]}
+    sources_saved: int = 0  # dcp.dealer_sources rows added or refreshed
 
 
 class AdminLookups(CamelModel):
     roles: list[str]  # roles a company user can have
     countries: list[str]
-    regions: list[str]
+    regions: list[str]  # distinct names over all countries
+    regions_by_country: dict[str, list[str]]
     sectors: list[str]
     dealer_types: list[str]
     dealer_statuses: list[str]

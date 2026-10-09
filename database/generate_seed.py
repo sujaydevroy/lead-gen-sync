@@ -25,7 +25,10 @@ ROLES = [
     ("Viewer", "Read-only access"),
     ("System Administrator", "Platform owners: manage all companies and upload dealers"),
 ]
-REGIONS = ["North", "South", "East", "West", "Central"]
+# Regions belong to a country. India: the zonal map used by the crawler (data-crawler-service/DESIGN.md).
+# Other countries get the regions their dealers in dealers.json use, in this order.
+INDIA_REGIONS = ["North", "South", "East", "West", "Central", "North East"]
+REGION_ORDER = {name: i + 1 for i, name in enumerate(INDIA_REGIONS)}
 # Mirrors frontend/src/lib/countries.js
 COUNTRIES = {
     "India": "IN", "United States": "US", "Germany": "DE", "United Kingdom": "GB", "France": "FR",
@@ -40,7 +43,10 @@ CURRENCIES = {
     "AUD": ("Australian Dollar", 0.66), "CAD": ("Canadian Dollar", 0.73), "JPY": ("Japanese Yen", 0.0067),
 }
 FX_EFFECTIVE_DATE = "2026-10-01"
-DEALER_TYPES = ["Distributor", "Reseller", "Partner", "Service Center"]
+DEALER_TYPES = [
+    "Distributor", "Reseller", "Partner", "Service Center",
+    "Wholesaler", "Retailer", "Manufacturer", "Exporter / Importer",
+]
 DEALER_STATUSES = ["Active", "Inactive", "Pending"]
 COMMUNICATION_TYPES = ["Email", "Message", "Call", "Meeting"]
 COMMUNICATION_STATUSES = ["Sent", "Delivered", "Read", "Received", "Completed", "Initiated", "Scheduled", "Failed"]
@@ -140,12 +146,21 @@ def main() -> None:
     w(values_block(ROLES))
     w("ON CONFLICT DO NOTHING;")
     w("")
-    w("INSERT INTO dcp.regions (name, sort_order) VALUES")
-    w(",\n".join(f"    ({lit(r)}, {i + 1})" for i, r in enumerate(REGIONS)))
-    w("ON CONFLICT DO NOTHING;")
-    w("")
     w("INSERT INTO dcp.countries (name, iso2_code) VALUES")
     w(values_block(list(COUNTRIES.items())))
+    w("ON CONFLICT DO NOTHING;")
+    w("")
+    region_rows = [("India", r) for r in INDIA_REGIONS]
+    region_rows += sorted(
+        {(d["country"], d["region"]) for d in dealers if d["region"] != NOT_AVAILABLE and d["country"] != "India"},
+        key=lambda pair: (pair[0], REGION_ORDER.get(pair[1], 99), pair[1]),
+    )
+    w("INSERT INTO dcp.regions (country_id, name, sort_order)")
+    w("SELECT c.id, v.name, v.sort_order::smallint")
+    w("FROM (VALUES")
+    w(",\n".join(f"    ({lit(c)}, {lit(r)}, {REGION_ORDER.get(r, 99)})" for c, r in region_rows))
+    w(") AS v(country, name, sort_order)")
+    w("JOIN dcp.countries c ON c.name = v.country")
     w("ON CONFLICT DO NOTHING;")
     w("")
     w("INSERT INTO dcp.currencies (code, name) VALUES")
@@ -191,7 +206,7 @@ def main() -> None:
     w("    'Tower B, 7th Floor, Cyber Park, Sector 39', 'Gurugram', 'Haryana', '122002', c.id, r.id,")
     w("    'U31900HR2009PLC045217', '06AABCA4521K1ZQ', 1250, 2009")
     w(f"FROM dcp.sectors s, dcp.countries c, dcp.regions r")
-    w(f"WHERE s.name = {lit(company_sector)} AND c.name = 'India' AND r.name = 'North'")
+    w(f"WHERE s.name = {lit(company_sector)} AND c.name = 'India' AND r.country_id = c.id AND r.name = 'North'")
     w("ON CONFLICT DO NOTHING;")
     w("")
 
@@ -199,7 +214,8 @@ def main() -> None:
     w("INSERT INTO dcp.users (company_id, role_id, user_code, full_name, email, job_title, phone, country_id, region_id)")
     w("SELECT co.id, ro.id, 'USR-2001', 'John Smith', 'john.smith@abc.com', 'Head of Channel Sales', '+91 98110 45512', c.id, r.id")
     w("FROM dcp.companies co, dcp.roles ro, dcp.countries c, dcp.regions r")
-    w(f"WHERE co.company_code = {lit(COMPANY_CODE)} AND ro.name = 'Company Administrator' AND c.name = 'India' AND r.name = 'North'")
+    w(f"WHERE co.company_code = {lit(COMPANY_CODE)} AND ro.name = 'Company Administrator' AND c.name = 'India'")
+    w("  AND r.country_id = c.id AND r.name = 'North'")
     w("ON CONFLICT DO NOTHING;")
     w("")
     w("INSERT INTO dcp.user_settings (user_id)")
@@ -247,7 +263,7 @@ def main() -> None:
     w("JOIN dcp.dealer_types dt ON dt.name = v.dealer_type")
     w("JOIN dcp.dealer_statuses ds ON ds.name = v.status")
     w("JOIN dcp.countries cn ON cn.name = v.country")
-    w("LEFT JOIN dcp.regions rg ON rg.name = v.region")
+    w("LEFT JOIN dcp.regions rg ON rg.country_id = cn.id AND rg.name = v.region")
     w("LEFT JOIN dcp.sectors se ON se.name = v.sector")
     w("LEFT JOIN dcp.currencies cu ON cu.code = v.currency")
     w("ON CONFLICT DO NOTHING;")
@@ -262,6 +278,14 @@ def main() -> None:
     w(") AS v(dealer_code, product, sort_order)")
     w("JOIN dcp.dealers d ON d.dealer_code = v.dealer_code")
     w("JOIN dcp.products p ON lower(p.name) = lower(v.product)")
+    w("ON CONFLICT DO NOTHING;")
+    w("")
+    w("-- Dealer sources: each dealer's source_url is its first source ------------------------")
+    w("INSERT INTO dcp.dealer_sources (dealer_id, source_url, source_kind, first_seen_on, last_seen_on)")
+    w("SELECT d.id, d.source_url, 'upload', COALESCE(d.verification_date, d.created_on::date),")
+    w("    COALESCE(d.verification_date, d.created_on::date)")
+    w("FROM dcp.dealers d")
+    w("WHERE d.source_url IS NOT NULL")
     w("ON CONFLICT DO NOTHING;")
     w("")
     w("COMMIT;")

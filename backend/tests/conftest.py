@@ -71,7 +71,7 @@ def database():
         auth_service.set_password(db, john, DEMO_PASSWORD)
         viewer_role = db.scalar(select(Role).where(Role.name == "Viewer"))
         india = db.scalar(select(Country).where(Country.name == "India"))
-        north = db.scalar(select(Region).where(Region.name == "North"))
+        north = db.scalar(select(Region).where(Region.country_id == india.id, Region.name == "North"))
         viewer = User(
             company_id=john.company_id,
             role_id=viewer_role.id,

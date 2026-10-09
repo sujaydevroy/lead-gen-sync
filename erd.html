@@ -17,7 +17,7 @@
 <body>
 <main>
   <h1>Dealer Communication Portal — ERD</h1>
-  <p>27 tables in schema <code>dcp</code>. Every table also has the common columns
+  <p>28 tables in schema <code>dcp</code>. Every table also has the common columns
      id, is_active, created_by, created_on, modified_by, modified_on.</p>
   <section><h2>1. Relationships overview</h2><pre class="mermaid">erDiagram
     communications ||--o{ communication_attachments : &quot;communication_id&quot;
@@ -31,6 +31,7 @@
     sectors |o--o{ companies : &quot;sector_id&quot;
     dealers ||--o{ dealer_products : &quot;dealer_id&quot;
     products ||--o{ dealer_products : &quot;product_id&quot;
+    dealers ||--o{ dealer_sources : &quot;dealer_id&quot;
     countries ||--o{ dealers : &quot;country_id&quot;
     dealer_statuses ||--o{ dealers : &quot;dealer_status_id&quot;
     dealer_types ||--o{ dealers : &quot;dealer_type_id&quot;
@@ -42,6 +43,7 @@
     users ||--o{ password_reset_tokens : &quot;user_id&quot;
     products ||--o{ product_sub_sectors : &quot;product_id&quot;
     sub_sectors ||--o{ product_sub_sectors : &quot;sub_sector_id&quot;
+    countries ||--o{ regions : &quot;country_id&quot;
     companies ||--o{ sales_records : &quot;company_id&quot;
     countries |o--o{ sales_records : &quot;country_id&quot;
     currencies |o--o{ sales_records : &quot;currency_id&quot;
@@ -84,7 +86,8 @@
     }
     regions {
         bigint id PK
-        varchar_50 name UK
+        bigint country_id FK
+        varchar_50 name
         smallint sort_order
         boolean is_active &quot;audit&quot;
         bigint created_by &quot;audit&quot;
@@ -456,6 +459,7 @@
     sectors |o--o{ companies : &quot;sector_id&quot;
     dealers ||--o{ dealer_products : &quot;dealer_id&quot;
     products ||--o{ dealer_products : &quot;product_id&quot;
+    dealers ||--o{ dealer_sources : &quot;dealer_id&quot;
     countries ||--o{ dealers : &quot;country_id&quot;
     dealer_statuses ||--o{ dealers : &quot;dealer_status_id&quot;
     dealer_types ||--o{ dealers : &quot;dealer_type_id&quot;
@@ -467,6 +471,7 @@
     users ||--o{ password_reset_tokens : &quot;user_id&quot;
     products ||--o{ product_sub_sectors : &quot;product_id&quot;
     sub_sectors ||--o{ product_sub_sectors : &quot;sub_sector_id&quot;
+    countries ||--o{ regions : &quot;country_id&quot;
     companies ||--o{ sales_records : &quot;company_id&quot;
     countries |o--o{ sales_records : &quot;country_id&quot;
     currencies |o--o{ sales_records : &quot;currency_id&quot;

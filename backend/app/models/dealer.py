@@ -4,6 +4,7 @@ from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import BigInteger, Boolean, Date, ForeignKey, Numeric, SmallInteger, String
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import AuditMixin, Base
@@ -68,3 +69,17 @@ class DealerProduct(AuditMixin, Base):
     product_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("dcp.products.id"))
     sort_order: Mapped[int] = mapped_column(SmallInteger, default=0)
     product: Mapped[Product] = relationship(lazy="joined")
+
+
+class DealerSource(AuditMixin, Base):
+    """One source a dealer was found in or confirmed by (crawler, registry, upload); unique per dealer + URL."""
+
+    __tablename__ = "dealer_sources"
+    dealer_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("dcp.dealers.id"))
+    source_url: Mapped[str] = mapped_column(String(500))
+    source_kind: Mapped[str | None] = mapped_column(String(30))
+    source_name: Mapped[str | None] = mapped_column(String(200))
+    external_id: Mapped[str | None] = mapped_column(String(100))
+    first_seen_on: Mapped[date] = mapped_column(Date, default=date.today)
+    last_seen_on: Mapped[date] = mapped_column(Date, default=date.today)
+    evidence: Mapped[dict | None] = mapped_column(JSONB)

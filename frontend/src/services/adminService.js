@@ -14,7 +14,7 @@ function validateDealerFile(file) {
 }
 
 const adminService = {
-  /** { countries, regions, sectors, dealerTypes, dealerStatuses, currencies } */
+  /** { countries, regions, regionsByCountry: { India: [...] }, sectors, dealerTypes, dealerStatuses, currencies } */
   getLookups() {
     return api.get('/admin/lookups');
   },
@@ -73,7 +73,8 @@ const adminService = {
 
   /**
    * Upload a dealer file into the dealer directory. The rows are saved in dcp.dealers; the response is the
-   * outcome only: { inserted, updated, failed, issues: [{ row, message }], columnMapping, ignoredColumns, ... }
+   * outcome only: { inserted, updated, failed, issues: [{ row, message }], columnMapping, ignoredColumns,
+   * createdLookups: { Country: [...], Region: [...], ... }, sourcesSaved, ... }
    */
   async uploadDealers(file) {
     validateDealerFile(file);

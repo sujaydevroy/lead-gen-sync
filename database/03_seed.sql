@@ -18,14 +18,6 @@ INSERT INTO dcp.roles (name, description) VALUES
     ('System Administrator', 'Platform owners: manage all companies and upload dealers')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO dcp.regions (name, sort_order) VALUES
-    ('North', 1),
-    ('South', 2),
-    ('East', 3),
-    ('West', 4),
-    ('Central', 5)
-ON CONFLICT DO NOTHING;
-
 INSERT INTO dcp.countries (name, iso2_code) VALUES
     ('India', 'IN'),
     ('United States', 'US'),
@@ -49,6 +41,63 @@ INSERT INTO dcp.countries (name, iso2_code) VALUES
     ('Sri Lanka', 'LK')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO dcp.regions (country_id, name, sort_order)
+SELECT c.id, v.name, v.sort_order::smallint
+FROM (VALUES
+    ('India', 'North', 1),
+    ('India', 'South', 2),
+    ('India', 'East', 3),
+    ('India', 'West', 4),
+    ('India', 'Central', 5),
+    ('India', 'North East', 6),
+    ('Australia', 'North', 1),
+    ('Australia', 'South', 2),
+    ('Australia', 'East', 3),
+    ('Australia', 'West', 4),
+    ('Australia', 'Central', 5),
+    ('Canada', 'North', 1),
+    ('Canada', 'South', 2),
+    ('Canada', 'East', 3),
+    ('Canada', 'West', 4),
+    ('Canada', 'Central', 5),
+    ('France', 'North', 1),
+    ('France', 'South', 2),
+    ('France', 'East', 3),
+    ('France', 'West', 4),
+    ('France', 'Central', 5),
+    ('Germany', 'North', 1),
+    ('Germany', 'South', 2),
+    ('Germany', 'East', 3),
+    ('Germany', 'West', 4),
+    ('Germany', 'Central', 5),
+    ('Japan', 'North', 1),
+    ('Japan', 'South', 2),
+    ('Japan', 'East', 3),
+    ('Japan', 'West', 4),
+    ('Japan', 'Central', 5),
+    ('Singapore', 'North', 1),
+    ('Singapore', 'East', 3),
+    ('Singapore', 'West', 4),
+    ('Singapore', 'Central', 5),
+    ('United Arab Emirates', 'North', 1),
+    ('United Arab Emirates', 'South', 2),
+    ('United Arab Emirates', 'East', 3),
+    ('United Arab Emirates', 'West', 4),
+    ('United Arab Emirates', 'Central', 5),
+    ('United Kingdom', 'North', 1),
+    ('United Kingdom', 'South', 2),
+    ('United Kingdom', 'East', 3),
+    ('United Kingdom', 'West', 4),
+    ('United Kingdom', 'Central', 5),
+    ('United States', 'North', 1),
+    ('United States', 'South', 2),
+    ('United States', 'East', 3),
+    ('United States', 'West', 4),
+    ('United States', 'Central', 5)
+) AS v(country, name, sort_order)
+JOIN dcp.countries c ON c.name = v.country
+ON CONFLICT DO NOTHING;
+
 INSERT INTO dcp.currencies (code, name) VALUES
     ('USD', 'US Dollar'),
     ('EUR', 'Euro'),
@@ -65,7 +114,11 @@ INSERT INTO dcp.dealer_types (name) VALUES
     ('Distributor'),
     ('Reseller'),
     ('Partner'),
-    ('Service Center')
+    ('Service Center'),
+    ('Wholesaler'),
+    ('Retailer'),
+    ('Manufacturer'),
+    ('Exporter / Importer')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO dcp.dealer_statuses (name) VALUES
@@ -722,14 +775,15 @@ SELECT 'CMP-10045', 'ABC Corporation', 'ABC', 'Electrical Equipment Manufacturin
     'Tower B, 7th Floor, Cyber Park, Sector 39', 'Gurugram', 'Haryana', '122002', c.id, r.id,
     'U31900HR2009PLC045217', '06AABCA4521K1ZQ', 1250, 2009
 FROM dcp.sectors s, dcp.countries c, dcp.regions r
-WHERE s.name = 'Electrical & Electrical Equipment' AND c.name = 'India' AND r.name = 'North'
+WHERE s.name = 'Electrical & Electrical Equipment' AND c.name = 'India' AND r.country_id = c.id AND r.name = 'North'
 ON CONFLICT DO NOTHING;
 
 -- User (frontend/src/data/users.js). password_hash stays NULL: set it with the backend CLI. --
 INSERT INTO dcp.users (company_id, role_id, user_code, full_name, email, job_title, phone, country_id, region_id)
 SELECT co.id, ro.id, 'USR-2001', 'John Smith', 'john.smith@abc.com', 'Head of Channel Sales', '+91 98110 45512', c.id, r.id
 FROM dcp.companies co, dcp.roles ro, dcp.countries c, dcp.regions r
-WHERE co.company_code = 'CMP-10045' AND ro.name = 'Company Administrator' AND c.name = 'India' AND r.name = 'North'
+WHERE co.company_code = 'CMP-10045' AND ro.name = 'Company Administrator' AND c.name = 'India'
+  AND r.country_id = c.id AND r.name = 'North'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO dcp.user_settings (user_id)
@@ -897,7 +951,7 @@ FROM (VALUES
 JOIN dcp.dealer_types dt ON dt.name = v.dealer_type
 JOIN dcp.dealer_statuses ds ON ds.name = v.status
 JOIN dcp.countries cn ON cn.name = v.country
-LEFT JOIN dcp.regions rg ON rg.name = v.region
+LEFT JOIN dcp.regions rg ON rg.country_id = cn.id AND rg.name = v.region
 LEFT JOIN dcp.sectors se ON se.name = v.sector
 LEFT JOIN dcp.currencies cu ON cu.code = v.currency
 ON CONFLICT DO NOTHING;
@@ -1165,6 +1219,14 @@ FROM (VALUES
 ) AS v(dealer_code, product, sort_order)
 JOIN dcp.dealers d ON d.dealer_code = v.dealer_code
 JOIN dcp.products p ON lower(p.name) = lower(v.product)
+ON CONFLICT DO NOTHING;
+
+-- Dealer sources: each dealer's source_url is its first source ------------------------
+INSERT INTO dcp.dealer_sources (dealer_id, source_url, source_kind, first_seen_on, last_seen_on)
+SELECT d.id, d.source_url, 'upload', COALESCE(d.verification_date, d.created_on::date),
+    COALESCE(d.verification_date, d.created_on::date)
+FROM dcp.dealers d
+WHERE d.source_url IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 COMMIT;

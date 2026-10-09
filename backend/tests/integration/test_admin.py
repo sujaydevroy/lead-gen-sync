@@ -12,6 +12,11 @@ from openpyxl import Workbook, load_workbook
 from tests.conftest import DEMO_PASSWORD, OTHER_PASSWORD, SYSADMIN_EMAIL, SYSADMIN_PASSWORD, VIEWER_PASSWORD, login
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
+# Lookup values the upload tests create (removed again after each test)
+CREATED_COUNTRIES = ("Atlantis",)
+CREATED_REGIONS = ("Bagmati", "Kanto")
+CREATED_SECTORS = ("Test Crawl Sector",)
+CREATED_TYPES = ("Test Agent",)
 NEW_ADMIN_PASSWORD = "Northwind-Admin-2026"
 
 
@@ -61,13 +66,20 @@ def remove_uploaded_dealers():
     from sqlalchemy import delete, select
 
     from app.core.database import get_session_factory
-    from app.models import Dealer, DealerProduct
+    from app.models import Country, Dealer, DealerProduct, DealerSource, DealerType, Region, Sector
 
     seeded = {d["dealer_id"] for d in json.loads((Path(__file__).resolve().parents[3] / "dealers.json").read_bytes())}
     with get_session_factory()() as db:
         extra = select(Dealer.id).where(Dealer.dealer_code.not_in(seeded))
         db.execute(delete(DealerProduct).where(DealerProduct.dealer_id.in_(extra)))
+        db.execute(delete(DealerSource).where(DealerSource.dealer_id.in_(extra)))
         db.execute(delete(Dealer).where(Dealer.dealer_code.not_in(seeded)))
+        db.execute(delete(Region).where(Region.name.in_(CREATED_REGIONS)))
+        atlantis = select(Country.id).where(Country.name.in_(CREATED_COUNTRIES))
+        db.execute(delete(Region).where(Region.country_id.in_(atlantis)))
+        db.execute(delete(Country).where(Country.name.in_(CREATED_COUNTRIES)))
+        db.execute(delete(Sector).where(Sector.name.in_(CREATED_SECTORS)))
+        db.execute(delete(DealerType).where(DealerType.name.in_(CREATED_TYPES)))
         db.commit()
 
 
@@ -160,11 +172,12 @@ def test_dealer_upload_xlsx_insert_update_and_errors(client):
     response = upload(client, xlsx(rows), "dealers.xlsx")
     assert response.status_code == 201, response.text
     result = response.json()
-    assert (result["totalRows"], result["inserted"], result["updated"], result["failed"]) == (6, 2, 0, 4)
+    assert (result["totalRows"], result["inserted"], result["updated"], result["failed"]) == (6, 3, 0, 3)
     assert result["fileFormat"] == "xlsx" and "companyId" not in result and "uploadedBy" not in result
     assert result["ignoredColumns"] == ["Notes"] and result["columnMapping"]["dealer_name"] == "Dealer Name"
+    assert result["createdLookups"] == {"Country": ["Atlantis"]}  # unknown values are created, not rejected
     messages = {issue["row"]: issue["message"] for issue in result["issues"]}
-    assert "Unknown country 'Atlantis'" in messages[4]
+    assert 4 not in messages
     assert "missing: Dealer Type" in messages[5]
     assert "appears more than once" in messages[6]
     assert "Email" in messages[7]
@@ -338,3 +351,103 @@ def test_company_has_one_user_mapping(client):
     assert client.get(f"/api/v1/admin/companies/{created['id']}").json()["user"]["name"] == "One User Co Admin"
     found = client.get("/api/v1/admin/companies", params={"search": "solo@oneuser"}).json()  # search by the user too
     assert [c["id"] for c in found] == [created["id"]]
+
+
+def test_dealer_upload_regions_per_country_and_new_lookups(client):
+    """A region is looked up (or created) within the row's country; new countries / sectors / types are created."""
+    sysadmin(client)
+    rows = [
+        ["Dealer ID", "Dealer Name", "Dealer Type", "Country", "Region", "Sector", "State"],
+        ["RG-1", "Delhi Tobacco Traders", "Wholesaler", "India", "north", "Tobacco & Related Products", "Delhi"],
+        ["RG-2", "Guwahati Distributors", "Distributor", "India", "North East", "", "Assam"],
+        ["RG-3", "Kathmandu Leaf Co", "Exporter / Importer", "Nepal", "Bagmati", "", ""],
+        ["RG-4", "Test Agency", "Test Agent", "India", "", "Test Crawl Sector", ""],
+        ["RG-5", "Code Country", "Distributor", "ZZ", "", "", ""],
+        ["RG-6", "Tokyo Imports", "Retailer", "Japan", "KANTO", "", ""],
+    ]
+    result = upload(client, xlsx(rows), "regions.xlsx").json()
+    assert (result["inserted"], result["failed"]) == (5, 1), result["issues"]
+    assert "Unknown country 'ZZ'" in result["issues"][0]["message"]
+    assert result["createdLookups"] == {
+        "Region": ["Bagmati", "Kanto"],
+        "Dealer Type": ["Test Agent"],
+        "Sector": ["Test Crawl Sector"],
+    }
+
+    from sqlalchemy import select
+
+    from app.core.database import get_session_factory
+    from app.models import Dealer
+
+    with get_session_factory()() as db:
+        dealers = {d.dealer_code: d for d in db.scalars(select(Dealer).where(Dealer.dealer_code.like("RG-%")))}
+        assert dealers["RG-1"].region.name == "North" and dealers["RG-1"].region.country_id == dealers["RG-1"].country_id
+        assert dealers["RG-2"].region.name == "North East"
+        assert dealers["RG-3"].region.country_id == dealers["RG-3"].country_id
+        assert dealers["RG-6"].region.name == "Kanto"
+
+    # Moving a dealer to another country without a region clears the old country's region;
+    # a region without a country uses the dealer's current country.
+    rows = [["Dealer ID", "Country"], ["RG-1", "Japan"]]
+    assert upload(client, xlsx(rows), "move.xlsx").json()["updated"] == 1
+    rows = [["Dealer ID", "Region"], ["RG-2", "South"]]
+    assert upload(client, xlsx(rows), "region.xlsx").json()["updated"] == 1
+    login(client)
+    assert client.get("/api/v1/dealers/RG-1").json()["region"] == "Not Available"
+    assert client.get("/api/v1/dealers/RG-2").json()["region"] == "South"
+    assert client.get("/api/v1/dealers/RG-1").json()["dealer_type"] == "Wholesaler"
+
+
+def test_dealer_upload_keeps_every_source(client):
+    """Source URL and a crawler "sources" list are kept in dcp.dealer_sources, one row per dealer + URL."""
+    sysadmin(client)
+    crawled = [
+        {
+            "dealer_name": "Sharma Tobacco Agencies",
+            "dealer_type": "Distributor",
+            "status": "Active",
+            "country": "India",
+            "region": "North",
+            "registration_no": "09AAAPS1234A1Z5",
+            "source_url": "https://data.gov.in/mca/up",
+            "verification_date": "2026-10-01",
+            "sources": [
+                {"url": "https://data.gov.in/mca/up", "kind": "registry", "name": "MCA master data (UP)",
+                 "external_id": "U16009UP2001PTC000001", "first_seen": "2026-09-01"},
+                {"url": "https://gst.example/09AAAPS1234A1Z5", "kind": "tax_registry", "name": "GST verification",
+                 "external_id": "09AAAPS1234A1Z5", "evidence": {"status": "Active", "nature": "Wholesale"}},
+            ],
+        }
+    ]  # fmt: skip
+    result = upload(client, json.dumps(crawled).encode(), "crawl.json").json()
+    assert (result["inserted"], result["failed"], result["sourcesSaved"]) == (1, 0, 2), result["issues"]
+
+    # Upload again later with a new source URL: rows are refreshed, not duplicated.
+    crawled[0]["verification_date"] = "2026-11-15"
+    crawled[0]["dealer_id"] = find_dealer(sysadmin(client), "Sharma Tobacco Agencies")["dealer_id"]
+    crawled[0]["source_url"] = "https://tobaccoboard.example/dealers"
+    result = upload(client, json.dumps(crawled).encode(), "crawl.json").json()
+    assert (result["updated"], result["sourcesSaved"]) == (1, 3)
+
+    from sqlalchemy import select
+
+    from app.core.database import get_session_factory
+    from app.models import Dealer, DealerSource
+
+    with get_session_factory()() as db:
+        rows = {
+            s.source_url: s
+            for s in db.scalars(select(DealerSource).join(Dealer).where(Dealer.dealer_name == "Sharma Tobacco Agencies"))
+        }
+    assert set(rows) == {"https://data.gov.in/mca/up", "https://gst.example/09AAAPS1234A1Z5",
+                         "https://tobaccoboard.example/dealers"}  # fmt: skip
+    mca = rows["https://data.gov.in/mca/up"]
+    assert (mca.source_kind, mca.external_id, str(mca.first_seen_on), str(mca.last_seen_on)) == (
+        "registry", "U16009UP2001PTC000001", "2026-09-01", "2026-11-15",
+    )  # fmt: skip
+    assert rows["https://gst.example/09AAAPS1234A1Z5"].evidence == {"status": "Active", "nature": "Wholesale"}
+    assert rows["https://tobaccoboard.example/dealers"].source_kind == "upload"
+
+    bad = [{**crawled[0], "dealer_id": "", "dealer_name": "Bad Sources", "sources": [{"kind": "registry"}]}]
+    result = upload(client, json.dumps(bad).encode(), "bad.json").json()
+    assert result["failed"] == 1 and "needs a url" in result["issues"][0]["message"]

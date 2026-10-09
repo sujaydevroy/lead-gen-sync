@@ -112,7 +112,10 @@ def test_recent_lookups_company_and_dashboard(auth_client):
     assert {"name": "India", "count": 12} in countries
     regions = auth_client.get("/api/v1/lookups/regions", params={"country": "India"}).json()
     assert [r["name"] for r in regions] == ["North", "South", "East", "West", "Central"]
-    assert auth_client.get("/api/v1/lookups/dealer-types").json() == ["Distributor", "Reseller", "Partner", "Service Center"]
+    assert auth_client.get("/api/v1/lookups/dealer-types").json() == [
+        "Distributor", "Reseller", "Partner", "Service Center", "Wholesaler", "Retailer", "Manufacturer",
+        "Exporter / Importer",
+    ]  # fmt: skip
 
     company = auth_client.get("/api/v1/companies/me").json()
     assert company["id"] == "CMP-10045" and company["sector"] == "Electrical & Electrical Equipment"

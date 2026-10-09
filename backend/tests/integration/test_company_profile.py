@@ -10,6 +10,7 @@ def test_company_admin_edits_own_company(auth_client):
     options = auth_client.get("/api/v1/companies/me/options").json()
     assert "Electrical & Electrical Equipment" in options["sectors"] and "India" in options["countries"]
     assert options["regions"][:2] == ["North", "South"]
+    assert options["regionsByCountry"]["India"] == ["North", "South", "East", "West", "Central", "North East"]
 
     payload = {
         "name": "ABC Corporation Ltd",
@@ -37,6 +38,14 @@ def test_company_admin_edits_own_company(auth_client):
     assert body["address"]["city"] == "Gurugram" and body["address"]["country"] == "India" and body["employees"] == 1250
     assert auth_client.get("/api/v1/companies/me").json()["name"] == "ABC Corporation Ltd"
     assert auth_client.get("/api/v1/companies/me/sector").json()["sector"] == "Electrical & Electrical Equipment"
+
+    # A region is chosen within the company's country.
+    north_east = auth_client.put("/api/v1/companies/me", json={**payload, "region": "North East"})
+    assert north_east.status_code == 200 and north_east.json()["address"]["region"] == "North East"
+    wrong = auth_client.put("/api/v1/companies/me", json={**payload, "country": "Germany", "region": "North East"})
+    assert wrong.status_code == 422 and wrong.json()["message"] == "'North East' is not a region of Germany."
+    no_country = auth_client.put("/api/v1/companies/me", json={**payload, "country": None})
+    assert no_country.status_code == 422 and "country before the region" in no_country.json()["message"]
 
     bad = auth_client.put("/api/v1/companies/me", json={**payload, "sector": "Nope"})
     assert bad.status_code == 422 and "sector" in bad.json()["message"]

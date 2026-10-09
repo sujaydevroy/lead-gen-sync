@@ -12,7 +12,7 @@ const companyService = {
     return api.put('/companies/me', values);
   },
 
-  /** { sectors, countries, regions } for the company profile form. */
+  /** { sectors, countries, regions, regionsByCountry } for the company profile form. */
   getCompanyOptions() {
     return api.get('/companies/me/options');
   },

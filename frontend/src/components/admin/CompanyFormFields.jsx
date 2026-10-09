@@ -1,6 +1,7 @@
 'use client';
 
-import { Controller } from 'react-hook-form';
+import { useEffect } from 'react';
+import { Controller, useController, useWatch } from 'react-hook-form';
 import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
@@ -88,6 +89,42 @@ function SelectField({ control, name, label, options, helperText }) {
   );
 }
 
+/** Region select: each country has its own regions, so only the selected country's regions are offered. */
+function RegionField({ control, lookups }) {
+  const country = useWatch({ control, name: 'country' });
+  const { field } = useController({ name: 'region', control });
+  const loaded = Boolean(lookups?.regionsByCountry);
+  const options = country ? lookups?.regionsByCountry?.[country] || [] : [];
+  const optionsKey = options.join('|');
+  const { value, onChange } = field;
+
+  useEffect(() => {
+    // The country changed to one that doesn't have the selected region: clear it.
+    if (loaded && value && !optionsKey.split('|').includes(value)) onChange(NONE);
+  }, [loaded, value, optionsKey, onChange]);
+
+  return (
+    <TextField
+      select
+      fullWidth
+      label="Region"
+      {...field}
+      value={loaded && value && options.includes(value) ? value : NONE}
+      disabled={!country}
+      helperText={country ? `Regions of ${country}` : 'Choose a country first'}
+    >
+      <MenuItem value={NONE}>
+        <em>Not set</em>
+      </MenuItem>
+      {options.map((option) => (
+        <MenuItem key={option} value={option}>
+          {option}
+        </MenuItem>
+      ))}
+    </TextField>
+  );
+}
+
 /** The editable company profile, shared by "New company" and the company details page. */
 export default function CompanyFormFields({ register, control, errors, lookups }) {
   const text = (name, label, rules = {}, props = {}) => (
@@ -151,7 +188,7 @@ export default function CompanyFormFields({ register, control, errors, lookups }
         <SelectField control={control} name="country" label="Country" options={lookups?.countries || []} />
       </Grid>
       <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-        <SelectField control={control} name="region" label="Region" options={lookups?.regions || []} />
+        <RegionField control={control} lookups={lookups} />
       </Grid>
 
       {section('Registration')}

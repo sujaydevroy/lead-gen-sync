@@ -177,6 +177,9 @@ Key decisions:
 - **Dealers belong to no company** (migration 0005 dropped `dealers.company_id`): one global directory, unique
   `dealer_code`, the public id (`DLR-1001`) used in URLs. Clients will be matched to dealers through the products
   they deal in (`dealer_products`); today every client sees every active dealer (`visible_scope`).
+- **Regions belong to a country** (migration 0006): `regions.country_id`, names unique per country (India: North,
+  South, East, West, Central, North East). `dealer_sources` keeps every source of a dealer (crawler / registry /
+  upload) next to the primary `dealers.source_url`.
 - **"Not Available" becomes `NULL`** in the database. The API converts `NULL` back to the
   string `"Not Available"` for fields where the UI expects it, until the UI handles nulls itself.
 - **Sub-sector filtering** joins `dealer_products → product_sub_sectors` instead of running regex

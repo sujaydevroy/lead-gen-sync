@@ -19,8 +19,11 @@ class Country(AuditMixin, Base):
 
 
 class Region(AuditMixin, Base):
+    """A region belongs to one country; names are unique per country (North exists once per country)."""
+
     __tablename__ = "regions"
-    name: Mapped[str] = mapped_column(String(50), unique=True)
+    country_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("dcp.countries.id"))
+    name: Mapped[str] = mapped_column(String(50))
     sort_order: Mapped[int] = mapped_column(SmallInteger, default=0)
 
 

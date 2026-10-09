@@ -55,7 +55,7 @@ frontend/              Next.js app (package.json, next.config.mjs, .env.local)
     hooks/  types/
 backend/               FastAPI + SQLAlchemy + Alembic (see backend/README.md)
 database/              SQL schema, seed and generators
-data-crawler-service/  placeholder for the data crawler service
+data-crawler-service/  dealer crawler (Phase 0, India / tobacco): see data-crawler-service/README.md
 BACKEND_PLAN.md, ERD.md, erd.html, HANDOFF.md   backend plan, ERD, session handoff
 dealers.json, sector.json, sample_sales.xlsx     source data
 *.pptx                 client / dev walkthrough decks

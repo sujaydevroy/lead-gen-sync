@@ -3,7 +3,7 @@
 from app.models.base import AuditMixin, Base
 from app.models.communication import Communication, CommunicationAttachment
 from app.models.company import Company, PasswordResetToken, User, UserSession, UserSettings
-from app.models.dealer import Dealer, DealerProduct, Product, ProductSubSector
+from app.models.dealer import Dealer, DealerProduct, DealerSource, Product, ProductSubSector
 from app.models.lookups import (
     CommunicationStatus,
     CommunicationType,
@@ -37,6 +37,7 @@ __all__ = [
     "Currency",
     "Dealer",
     "DealerProduct",
+    "DealerSource",
     "DealerStatus",
     "DealerType",
     "ExchangeRate",

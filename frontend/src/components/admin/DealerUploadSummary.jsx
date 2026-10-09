@@ -18,6 +18,7 @@ import { formatNumber } from '@/lib/format';
 /** Outcome of one dealer file: counts, recognised / ignored columns and the rows that were not saved. */
 export default function DealerUploadSummary({ upload }) {
   const columns = Object.entries(upload.columnMapping || {});
+  const created = Object.entries(upload.createdLookups || {});
   return (
     <Stack spacing={2.5}>
       <Grid container spacing={2}>
@@ -40,6 +41,25 @@ export default function DealerUploadSummary({ upload }) {
           {formatNumber(upload.inserted + upload.updated)} row(s) were saved. {formatNumber(upload.failed)} row(s) were skipped —
           fix them in the file and upload it again (existing Dealer IDs are updated, not duplicated).
         </Alert>
+      )}
+
+      {created.length > 0 && (
+        <Alert severity="info">
+          <Typography variant="body2" gutterBottom>
+            New values were added to the lists (check them for typos):
+          </Typography>
+          {created.map(([kind, values]) => (
+            <Typography key={kind} variant="body2">
+              <strong>{kind}:</strong> {values.join(', ')}
+            </Typography>
+          ))}
+        </Alert>
+      )}
+
+      {upload.sourcesSaved > 0 && (
+        <Typography variant="body2" color="text.secondary">
+          {formatNumber(upload.sourcesSaved)} dealer source link(s) saved.
+        </Typography>
       )}
 
       {columns.length > 0 && (

@@ -33,6 +33,48 @@ def lookup_id(db: Session, model, name: str | None, label: str) -> int | None:
     return row_id
 
 
+def region_id(db: Session, country_id: int | None, country: str | None, name: str | None) -> int | None:
+    """Id of the active region with this name in the given country; 422 when the country has no such region."""
+    if name is None:
+        return None
+    if country_id is None:
+        raise ApiError(422, "Choose a country before the region.")
+    row_id = db.scalar(
+        select(Region.id).where(
+            Region.country_id == country_id, func.lower(Region.name) == name.strip().lower(), Region.is_active
+        )
+    )
+    if row_id is None:
+        raise ApiError(422, f"'{name}' is not a region of {country}.")
+    return row_id
+
+
+def region_names(db: Session) -> list[str]:
+    """Distinct active region names (a name like North exists once per country), in region order."""
+    rows = db.execute(
+        select(Region.name)
+        .join(Country, Country.id == Region.country_id)
+        .where(Region.is_active, Country.is_active)
+        .group_by(Region.name)
+        .order_by(func.min(Region.sort_order), Region.name)
+    )
+    return [name for (name,) in rows]
+
+
+def regions_by_country(db: Session) -> dict[str, list[str]]:
+    """Country name -> its active region names in region order (for forms that pick a country, then a region)."""
+    rows = db.execute(
+        select(Country.name, Region.name)
+        .join(Country, Country.id == Region.country_id)
+        .where(Region.is_active, Country.is_active)
+        .order_by(Country.name, Region.sort_order, Region.name)
+    )
+    result: dict[str, list[str]] = {}
+    for country, region in rows:
+        result.setdefault(country, []).append(region)
+    return result
+
+
 def _counts(db: Session, model, company_ids: list[int]) -> dict[int, int]:
     if not company_ids:
         return {}
@@ -124,7 +166,7 @@ def _apply_fields(db: Session, company: Company, payload: CompanyFields) -> None
     company.state = payload.state
     company.postal_code = payload.postal_code
     company.country_id = lookup_id(db, Country, payload.country, "country")
-    company.region_id = lookup_id(db, Region, payload.region, "region")
+    company.region_id = region_id(db, company.country_id, payload.country, payload.region)
     company.registration_number = payload.registration_number
     company.tax_id = payload.tax_id
     company.employee_count = payload.employees
@@ -180,7 +222,8 @@ def update_own_company(db: Session, company: Company, payload: CompanyFields) ->
 def company_options(db: Session) -> CompanyOptions:
     return CompanyOptions(
         countries=_names(db, Country, Country.name),
-        regions=_names(db, Region, Region.sort_order),
+        regions=region_names(db),
+        regions_by_country=regions_by_country(db),
         sectors=_names(db, Sector, Sector.name),
     )
 
@@ -241,7 +284,8 @@ def lookups(db: Session) -> AdminLookups:
     return AdminLookups(
         roles=company_user_service.assignable_roles(db),
         countries=_names(db, Country, Country.name),
-        regions=_names(db, Region, Region.sort_order),
+        regions=region_names(db),
+        regions_by_country=regions_by_country(db),
         sectors=_names(db, Sector, Sector.name),
         dealer_types=_names(db, DealerType, DealerType.id),
         dealer_statuses=_names(db, DealerStatus, DealerStatus.id),

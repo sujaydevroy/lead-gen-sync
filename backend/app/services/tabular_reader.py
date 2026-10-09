@@ -3,8 +3,8 @@
 The format is detected from the file content (zip = xlsx, OLE2 = xls, otherwise text = csv), so a
 workbook saved with the "wrong" extension still reads. Blank rows are skipped; each row keeps its
 spreadsheet row number (1 = first line of the sheet) for error messages. A .json file is a list of objects
-(like dealers.json); its keys become the headers, list values are joined with "; " and the row number is
-the position of the object in the list (1 = first).
+(like dealers.json); its keys become the headers, list values are joined with "; " (lists of objects stay JSON)
+and the row number is the position of the object in the list (1 = first).
 """
 
 from __future__ import annotations
@@ -124,6 +124,8 @@ def _read_csv(content: bytes, max_rows: int) -> Table:
 
 
 def _json_cell(value: Any) -> Any:
+    if isinstance(value, list) and any(isinstance(item, dict | list) for item in value):
+        return json.dumps(value, ensure_ascii=False)  # e.g. a dealer's "sources" objects
     if isinstance(value, list):
         return "; ".join(str(item) for item in value if item is not None)
     if isinstance(value, dict):

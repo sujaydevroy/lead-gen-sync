@@ -38,7 +38,8 @@ class CompanyOptions(CamelModel):
 
     sectors: list[str]
     countries: list[str]
-    regions: list[str]
+    regions: list[str]  # distinct names over all countries
+    regions_by_country: dict[str, list[str]]
 
 
 class SectorDefinition(BaseModel):
